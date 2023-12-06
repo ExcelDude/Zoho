@@ -1,0 +1,289 @@
+map Docusign_Info(map Docusign_Data)
+{
+//SEPARATE TABS
+Envelope_Summary = Docusign_Data.get("envelopeSummary");
+Envelope_Summary = Envelope_Summary.toMap();
+EnvelopeDocuments = Envelope_Summary.get("envelopeDocuments");
+EnvelopeDocuments = EnvelopeDocuments.toMap();
+Document_Name = EnvelopeDocuments.get("name");
+Recipients = Envelope_Summary.get("recipients");
+Recipients = Recipients.toMap();
+Signers = Recipients.get("signers");
+Signers = Signers.toMap();
+Tabs = Signers.get("tabs");
+Tabs = Tabs.toMap();
+//GET FULL NAME
+TitleTabs = Tabs.get("titleTabs");
+TitleTabs = TitleTabs.toMap();
+Title = TitleTabs.get("value");
+fullNameTabs = Tabs.get("fullNameTabs");
+fullNameTabs = fullNameTabs.toMap();
+FullName = fullNameTabs.get("value");
+//GET BUSINESS NAME
+try 
+{
+	CompanyTabs = Tabs.get("companyTabs");
+	CompanyTabs = CompanyTabs.toMap();
+	Business = CompanyTabs.get("value");
+}
+catch (e)
+{
+	info e;
+}
+//GET SIGNING DATE
+DateTabs = Tabs.get("dateSignedTabs");
+DateTabs = DateTabs.toMap();
+DateSigned = DateTabs.get("value");
+//GET EMAIL ADDRESS
+EmailAddressTabs = Tabs.get("emailAddressTabs");
+EmailAddressTabs = EmailAddressTabs.toMap();
+Email = EmailAddressTabs.get("value");
+TextTabs = Tabs.get("textTabs");
+try 
+{
+	CorporateAddress = TextTabs.get(8);
+	CorporateAddress = CorporateAddress.toMap();
+	CorporateAddress = CorporateAddress.get("value");
+}
+catch (e)
+{
+	info e;
+}
+NumberTabs = Tabs.get("numberTabs");
+NumericalTabs = Tabs.get("numericalTabs");
+//POPULATE VARIOUS FIELDS BASED ON THE DOCUMENT SIGNED
+if(Document_Name == "SKC ERC Client Services Agreement (August 2023) 20%.pdf")
+{
+	Tag = {{"name":"ERC","id":"5309615000006241133"}};
+	Layout = {"name":"ERC Clients","id":"5309615000000091023"};
+	Finance_Fee = 20;
+	Lead_Source = "Beaulieu DocuSign 20%";
+	for each  tab in NumberTabs
+	{
+		if(tab.get("tabLabel") = "Text 83457755-14bc-4af1-87b8-98f63af4f366")
+		{
+			MobileNumber = tab.toMap();
+			MobileNumber = MobileNumber.get("value");
+		}
+	}
+	for each  tab in NumericalTabs
+	{
+		if(tab.get("tabLabel") = "Number f8e6b75e-572a-4a2a-bd27-1d663a2d0709")
+		{
+			W2_2020 = tab.toMap();
+			W2_2020 = W2_2020.get("value").toLong();
+			W2_2020_Num = W2_2020.toNumber();
+		}
+		if(tab.get("tabLabel") = "Number 1bf21632-df81-4458-8a23-042f3d0d5892")
+		{
+			W2_2021 = tab.toMap();
+			W2_2021 = W2_2021.get("value").toLong();
+			W2_2021_Num = W2_2021.toNumber();
+		}
+	}
+	for each  tab in TextTabs
+	{
+		if(tab.get("tabLabel") = "Text e3fdc98a-ab7e-4319-8572-4486d41c703f")
+		{
+			CorporateAddress = tab.toMap();
+			CorporateAddress = CorporateAddress.get("value");
+		}
+	}
+	W2 = (W2_2020_Num + W2_2021_Num) / 2;
+	info W2_2020_Num;
+	info W2_2021_Num;
+	info W2;
+	Stage = "Contract Signed Won";
+}
+if(Document_Name == "SKC ERC Client Services Agreement (August 2023) 15%.pdf")
+{
+	Layout = {"name":"ERC Clients","id":"5309615000000091023"};
+	Tag = {{"name":"ERC","id":"5309615000006241133"}};
+	Finance_Fee = 15;
+	Lead_Source = "Beaulieu DocuSign 15%";
+	for each  tab in NumberTabs
+	{
+		if(tab.get("tabLabel") = "Text 83457755-14bc-4af1-87b8-98f63af4f366")
+		{
+			MobileNumber = tab.toMap();
+			MobileNumber = MobileNumber.get("value");
+		}
+	}
+	for each  tab in NumericalTabs
+	{
+		if(tab.get("tabLabel") = "Number ea5d16fb-c683-44f5-9fb3-360120cd5608")
+		{
+			W2_2020 = tab.toMap();
+			W2_2020 = W2_2020.get("value").toLong();
+			W2_2020_Num = W2_2020.toNumber();
+		}
+		if(tab.get("tabLabel") = "Number d7900e72-d8dd-499e-9857-a9c31bfe1f95")
+		{
+			W2_2021 = tab.toMap();
+			W2_2021 = W2_2021.get("value").toLong();
+			W2_2021_Num = W2_2021.toNumber();
+		}
+	}
+	for each  tab in TextTabs
+	{
+		if(tab.get("tabLabel") = "Text e3fdc98a-ab7e-4319-8572-4486d41c703f")
+		{
+			CorporateAddress = tab.toMap();
+			CorporateAddress = CorporateAddress.get("value");
+		}
+	}
+	W2 = (W2_2020_Num + W2_2021_Num) / 2;
+	info W2_2020_Num;
+	info W2_2021_Num;
+	info W2;
+	Stage = "Contract Signed Won";
+}
+if(Document_Name == "SKC ERC Client Services Agreement (August 2023) 17%.pdf")
+{
+	Tag = {{"name":"ERC","id":"5309615000006241133"}};
+	Layout = {"name":"ERC Clients","id":"5309615000000091023"};
+	Finance_Fee = 17;
+	Lead_Source = "Beaulieu DocuSign 17%";
+	for each  tab in NumberTabs
+	{
+		if(tab.get("tabLabel") = "Text 83457755-14bc-4af1-87b8-98f63af4f366")
+		{
+			MobileNumber = tab.toMap();
+			MobileNumber = MobileNumber.get("value");
+		}
+	}
+	for each  tab in NumericalTabs
+	{
+		if(tab.get("tabLabel") = "Number 187dfefb-76e2-43c4-8c72-3ed0744467f3")
+		{
+			W2_2020 = tab.toMap();
+			W2_2020 = W2_2020.get("value").toLong();
+			W2_2020_Num = W2_2020.toNumber();
+		}
+		if(tab.get("tabLabel") = "Number 50ffe97a-7005-4721-b3bb-1dcf9159e1aa")
+		{
+			W2_2021 = tab.toMap();
+			W2_2021 = W2_2021.get("value").toLong();
+			W2_2021_Num = W2_2021.toNumber();
+		}
+	}
+	for each  tab in TextTabs
+	{
+		if(tab.get("tabLabel") = "Text e3fdc98a-ab7e-4319-8572-4486d41c703f")
+		{
+			CorporateAddress = tab.toMap();
+			CorporateAddress = CorporateAddress.get("value");
+		}
+	}
+	W2 = (W2_2020_Num + W2_2021_Num) / 2;
+	info W2_2020_Num;
+	info W2_2021_Num;
+	info W2;
+	Stage = "Contract Signed Won";
+}
+if(Document_Name == "SKC 1099 Client Services Agreement (October, 2023) v3 NO UPFRONT + 8821.pdf")
+{
+	Tag = {{"name":"FFCRA","id":"5309615000058670017"}};
+	Layout = {"name":"FFCRA For Self-Employed","id":"5309615000057193003"};
+	for each  tab in TextTabs
+	{
+		if(tab.get("tabLabel") = "052b433e-7a4a-4bb5-a607-cb9941df4c43")
+		{
+			MobileNumber = tab.toMap();
+			MobileNumber = MobileNumber.get("value");
+		}
+		if(tab.get("tabLabel") = "5ace26b7-ecd9-4581-8234-733977ecffea")
+		{
+			CorporateAddress = tab.toMap();
+			CorporateAddress = CorporateAddress.get("value");
+		}
+	}
+	Business = FullName;
+	W2_2021_Num = 1;
+	Stage = "Qualified";
+	Finance_Fee = 20;
+	W2_2020_Num = 1;
+}
+if(Document_Name == "SKC 1099 Client Services Agreement (October, 2023) v3 NO UPFRONT + 8821 15%.pdf")
+{
+	Tag = {{"name":"FFCRA","id":"5309615000058670017"}};
+	Layout = {"name":"FFCRA For Self-Employed","id":"5309615000057193003"};
+	for each  tab in TextTabs
+	{
+		if(tab.get("tabLabel") = "052b433e-7a4a-4bb5-a607-cb9941df4c43")
+		{
+			MobileNumber = tab.toMap();
+			MobileNumber = MobileNumber.get("value");
+		}
+		if(tab.get("tabLabel") = "5ace26b7-ecd9-4581-8234-733977ecffea")
+		{
+			CorporateAddress = tab.toMap();
+			CorporateAddress = CorporateAddress.get("value");
+		}
+	}
+	Business = FullName;
+	W2_2021_Num = 1;
+	Stage = "Qualified";
+	Finance_Fee = 15;
+	W2_2020_Num = 1;
+}
+//CREATE ZOHO MAP VARIABLES
+ContactMap = Map();
+AccountMap = Map();
+DealMap = Map();
+//CREATE ZOHO ACCOUNT
+AccountMap.put("Account_Name",Business);
+AccountMap.put("Sales_Team","Beaulieu Sales Team");
+AccountMap.put("Company",Business);
+AccountMap.put("Billing_Code","TBD");
+AccountMap.put("Billing_Street",CorporateAddress);
+AccountMap.put("Billing_State","TBD");
+AccountMap.put("Billing_City","TBD");
+AccountResponse = zoho.crm.createRecord("Accounts",AccountMap);
+Account_ID = AccountResponse.get("id").toLong();
+//CREATE CONTACT
+ContactMap.put("First_Name",FullName);
+ContactMap.put("Last_Name","-");
+ContactMap.put("Phone",MobileNumber);
+ContactMap.put("Email",Email);
+ContactMap.put("Title",Title);
+ContactMap.put("Sales_Team","Beaulieu Sales Team");
+ContactMap.put("Lead_Source",Lead_Source);
+ContactMap.put("Account_Name",Account_ID);
+try 
+{
+	ContactResponse = zoho.crm.createRecord("Contacts",ContactMap);
+	Contact_ID = ContactResponse.get("id").toLong();
+}
+catch (e)
+{
+	ContactSearchResponse = zoho.crm.searchRecords("Contacts","(Email:equals:" + Email + ")");
+	ContactSearchResponse = ContactSearchResponse.get(0);
+	Contact_ID = ContactSearchResponse.get("id").toLong();
+}
+//CREATE DEAL
+DealMap.put("Layout",Layout);
+DealMap.put("Deal_Name",Business);
+DealMap.put("Sales_Team","Beaulieu Sales Team");
+DealMap.put("Lead_Source",Lead_Source);
+DealMap.put("Avg_Full_Time_W2s1",W2_2020_Num);
+DealMap.put("Avg_Full_Time_W2s",W2_2021_Num);
+DealMap.put("Amount",10000 * ifnull(W2,0));
+DealMap.put("Finance_Fee",Finance_Fee);
+DealMap.put("Closing_Date",today);
+DealMap.put("Sales_Vendor",5309615000002021013);
+DealMap.put("Sub_Referrer",5309615000002239097);
+DealMap.put("Referrer1","N/A");
+DealMap.put("Contact_Phone",MobileNumber);
+DealMap.put("Referrer_3",5309615000002239097);
+DealMap.put("Number_of_Employees",ifNull(W2_2021_Num.toNumber(),0));
+DealMap.put("Account_Name",Account_ID);
+DealMap.put("Contact_Name",Contact_ID);
+DealMap.put("Stage",Stage);
+DealMap.put("Tag",Tag);
+DealResponse = zoho.crm.createRecord("Deals",DealMap,{"trigger":{"workflow"}});
+info DealResponse;
+info DealResponse;
+ContactMap.put("Business",Business);
+return ContactMap;
+}
