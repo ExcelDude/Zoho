@@ -1,0 +1,335 @@
+map Get_Clustdoc_App_Information(int App_ID, int Deal_ID, int Proj_ID, string Sales_Team)
+{
+authtoken = "jaZgXIzgkvlI9LalvmMQcxkO3z5Fq5PqfInW0ypWGV9pspqV22YRjRk49O0v";
+testparams = Map();
+getfields2 = Map();
+testparams.put("api_token",authtoken);
+Entity_Count = 0;
+Entity_String = "";
+//GRAB CLUSTDOC APPLICATION's MAJOR DETAILS
+appFields = invokeurl
+[
+	url :"https://clustdoc.com/api/dossier/" + App_ID
+	type :GET
+	parameters:testparams
+];
+appFields = appFields.toMap();
+info appFields;
+Data = appFields.get("data");
+Data = Data.toMap();
+OwnerInfo = Data.get("owner");
+OwnerName = OwnerInfo.get("name");
+//GRAB TAG INFO FORM DATA & LOOP THROUGH THEM
+Tags = Data.get("tags").toList();
+for each  Tag in Tags
+{
+	Tag = Tag.toMap();
+	info Tag;
+	if(Tag.get("name") = "McNulty-Express")
+	{
+		CPA = "McNulty CPA (ERC Express)";
+	}
+	if(Tag.get("name") = "McNulty")
+	{
+		CPA = "McNulty CPA";
+	}
+	if(Tag.get("name") = "Tax Credits 247")
+	{
+		CPA = "Tax Credits 247";
+	}
+}
+Public_URL = Data.get("public_url");
+//GRAB ERC INFO FROM FORM FIELDS & LOOP THROUGH THEM
+Form_Fields = Data.get("form_fields").toList();
+Q1_2020_EEC = 0;
+Q2_2020_EEC = 0;
+Q3_2020_EEC = 0;
+Q4_2020_EEC = 0;
+Q1_2021_EEC = 0;
+Q2_2021_EEC = 0;
+Q3_2021_EEC = 0;
+Q4_2021_EEC = 0;
+for each  Item in Form_Fields
+{
+	Item = Item.toMap();
+	//info Item;
+	if(Item.get("label") = "Name of Entity")
+	{
+		Entity_Count = Entity_Count + 1;
+		if(Entity_Count = 1)
+		{
+			Entity_String = Item.get("value");
+		}
+		else
+		{
+			Entity_String = Entity_String + ", " + Item.get("value");
+		}
+	}
+	if(Item.get("id") = 1687450166761)
+	{
+		Physical_Address = Item.get("value");
+	}
+	if(Item.get("id") = 1687805758335)
+	{
+		Contract_Fee = Item.get("value");
+	}
+	if(Item.get("id") = 1687450262745)
+	{
+		Corporate_Physical_Address = Item.get("value");
+	}
+	if(Item.get("template_item_id") = 692344)
+	{
+		Contract_Status = Item.get("status_string");
+	}
+	if(Item.get("id") = 167510174083381)
+	{
+		W2_2020 = Item.get("value");
+	}
+	if(Item.get("id") = 167510174083382)
+	{
+		W2_2021 = Item.get("value");
+	}
+	//if(Item.get("id") = 167589617850135)
+	if(Item.get("label") = "2020 Q1 Eligible Employee Count" || Item.get("id") = 167589617850135)
+	{
+		try 
+		{
+			Q1_2020_EEC = Q1_2020_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850133)
+	if(Item.get("label") = "2020 Q2 Eligible Employee Count" || Item.get("id") = 167589617850133)
+	{
+		try 
+		{
+			Q2_2020_EEC = Q2_2020_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850131)
+	if(Item.get("label") = "2020 Q3 Eligible Employee Count" || Item.get("id") = 167589617850131)
+	{
+		try 
+		{
+			Q3_2020_EEC = Q3_2020_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850129)
+	if(Item.get("label") = "2020 Q4 Eligible Employee Count" || Item.get("id") = 167589617850129)
+	{
+		try 
+		{
+			Q4_2020_EEC = Q4_2020_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850143)
+	if(Item.get("label") = "2021 Q1 Eligible Employee Count" || Item.get("id") = 167589617850143)
+	{
+		try 
+		{
+			Q1_2021_EEC = Q1_2021_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850141)
+	if(Item.get("label") = "2021 Q2 Eligible Employee Count" || Item.get("id") = 167589617850141)
+	{
+		try 
+		{
+			Q2_2021_EEC = Q2_2021_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850139)
+	if(Item.get("label") = "2021 Q3 Eligible Employee Count" || Item.get("id") = 167589617850139)
+	{
+		try 
+		{
+			Q3_2021_EEC = Q3_2021_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	//if(Item.get("id") = 167589617850137)
+	if(Item.get("label") = "2021 Q4 Eligible Employee Count" || Item.get("id") = 167589617850137)
+	{
+		try 
+		{
+			Q4_2021_EEC = Q4_2021_EEC + Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	if(Item.get("id") = 1675202991550)
+	{
+		try 
+		{
+			Total_ERC = Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	if(Item.get("id") = 168668271128242)
+	{
+		try 
+		{
+			NOP_2020_1 = Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	if(Item.get("id") = 168668271128243)
+	{
+		try 
+		{
+			NOP_2021_1 = Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	if(Item.get("id") = 16866827112824238)
+	{
+		try 
+		{
+			NOP_2020_2 = Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+	if(Item.get("id") = 16866827112824338)
+	{
+		try 
+		{
+			NOP_2021_2 = Item.get("value").toLong();
+		}
+		catch (e)
+		{
+		}
+	}
+}
+try 
+{
+	count = 0;
+	Total_EEC_2021 = 0;
+	loop_list = {ifnull(Q4_2021_EEC / Entity_Count,0),ifNull(Q3_2021_EEC / Entity_Count,0),ifNull(Q2_2021_EEC / Entity_Count,0),ifNull(Q1_2021_EEC / Entity_Count,0)};
+	for each  val in loop_list
+	{
+		if(val > 0)
+		{
+			Total_EEC_2021 = Total_EEC_2021 + val;
+			count = count + 1;
+		}
+	}
+	if(count = 0)
+	{
+		count = 1;
+	}
+	EEC_2021 = Total_EEC_2021 / count;
+	
+}
+catch (e)
+{
+}
+try 
+{
+	count = 0;
+	Total_EEC_2020 = 0;
+	loop_list = {ifnull(Q4_2020_EEC / Entity_Count,0),ifNull(Q3_2020_EEC / Entity_Count,0),ifNull(Q2_2020_EEC / Entity_Count,0),ifNull(Q1_2020_EEC / Entity_Count,0)};
+	for each  val in loop_list
+	{
+		if(val > 0)
+		{
+			Total_EEC_2020 = Total_EEC_2020 + val;
+			count = count + 1;
+		}
+	}
+	if(count = 0)
+	{
+		count = 1;
+	}
+	EEC_2020 = Total_EEC_2020 / count;
+	
+}
+catch (e)
+{
+}
+try 
+{
+	if(ifNull(NOP_2020_2,0) > 0)
+	{
+		NOP_2020 = (NOP_2020_1 + NOP_2020_2) / 2;
+	}
+	if(ifNull(NOP_2020_2,0) = 0)
+	{
+		NOP_2020 = NOP_2020_1;
+	}
+	if(ifNull(NOP_2021_2,0) > 0)
+	{
+		NOP_2021 = (NOP_2021_1 + NOP_2021_2) / 2;
+	}
+	if(ifNull(NOP_2021_2,0) = 0)
+	{
+		NOP_2021 = NOP_2021_1;
+	}
+	NOP = ((NOP_2020 + NOP_2021) / 2).round(0);
+}
+catch (e)
+{
+}
+info EEC_2021;
+info EEC_2020;
+info Total_ERC;
+EEC_2020 = EEC_2020.toNumber();
+EEC_2021 = EEC_2021.toNumber();
+
+//IMPORT W2 INFO INTO CRM DEAL
+Params = Map();
+if(Sales_Team = "Scaling Squad Team")
+{
+	Params.put("Finance_Fee",Contract_Fee);
+}
+Params.put("Avg_Full_Time_W2s1",EEC_2020);
+Params.put("Avg_Full_Time_W2s",EEC_2021);
+Params.put("Billable_Entities",Entity_Count);
+Params.put("Entity_Names",Entity_String);
+Params.put("Client_Mailing_Address",Physical_Address);
+Params.put("Clustdoc_External_ID",Public_URL);
+Params.put("Client_Corporate_Address",Corporate_Physical_Address);
+Update_Deal = zoho.crm.updateRecord("Deals",Deal_ID,Params,{"trigger":{"workflow"}});
+Export_Data = Map();
+Export_Data.put("EEC_2020",EEC_2020);
+Export_Data.put("EEC_2021",EEC_2021);
+Export_Data.put("Total_ERC",Total_ERC);
+Export_Data.put("Entity_Count",Entity_Count);
+Export_Data.put("Entity_Names",Entity_String);
+Export_Data.put("CPA",CPA);
+Export_Data.put("NOP",NOP);
+Export_Data.put("Contract_Fee",Contract_Fee);
+Export_Data.put("Owner_Name",OwnerName);
+Export_Data.put("Contract_Status",Contract_Status);
+info Update_Deal;
+info Export_Data;
+
+return Export_Data;
+}
