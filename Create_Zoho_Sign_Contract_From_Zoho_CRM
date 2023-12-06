@@ -1,0 +1,131 @@
+// 11-04-2022
+// Get document from Zoho Writer
+// NOTE
+// Monthly sign document limit reached for your organisation - when we see the message this function will not run and error out.
+getfields = invokeurl
+[
+	url :" https://writer.zoho.com/api/v1/documents/p8oa472bb7e0e7da94885bc47bb788e573496/mergefields"
+	type :GET
+	connection:"writersign"
+];
+// Get Deal ID
+getdeal = zoho.crm.getRecordById("Deals",Did);
+// Get Contact ID by name
+Contact_id = getdeal.get("Contact_Name");
+Contact_id = Contact_id.get("id");
+info Contact_id;
+// Get Account ID by name
+Account_id = getdeal.get("Account_Name").get("id");
+// Get Sales Vendor ID
+Sales_Vendor_id = getdeal.get("Sales_Vendor").get("id");
+// Get Sub-referrer ID's
+try 
+{
+	Referrer2_id = getdeal.get("Sub_Referrer").get("id");
+}
+catch (e)
+{
+	Referrer2_id = 5309615000002239097;
+}
+try 
+{
+	Referrer3_id = getdeal.get("Referrer_3").get("id");
+}
+catch (e)
+{
+	Referrer3_id = 5309615000002239097;
+}
+getContact = zoho.crm.getRecordById("Contacts",Contact_id);
+getAccount = zoho.crm.getRecordById("Accounts",Account_id);
+getSalesVendor1 = zoho.crm.getRecordById("Vendors",Sales_Vendor_id);
+getSalesVendor2 = zoho.crm.getRecordById("Vendors",Referrer2_id);
+getSalesVendor3 = zoho.crm.getRecordById("Vendors",Referrer3_id);
+fname = getContact.get("First_Name");
+lname = getContact.get("Last_Name");
+email = getContact.get("Email");
+//referrer 1 info
+Sales_Vendorfname = getSalesVendor1.get("First_Name");
+Sales_Vendorlname = getSalesVendor1.get("Last_Name");
+Sales_VendorEmail = ifnull(getSalesVendor1.get("Email"),"");
+Sales_Vendor_fullname = Sales_Vendorfname + " " + Sales_Vendorlname;
+//referrer 2 info
+referrer2fname = getSalesVendor2.get("First_Name");
+referrer2lname = getSalesVendor2.get("Last_Name");
+referrer2Email = ifnull(getSalesVendor2.get("Email"),"");
+referrer2_fullname = referrer2fname + " " + referrer2lname;
+//referrer 3 info
+referrer3fname = getSalesVendor3.get("First_Name");
+referrer3lname = getSalesVendor3.get("Last_Name");
+referrer3Email = ifnull(getSalesVendor3.get("Email"),"");
+referrer3_fullname = referrer3fname + " " + referrer3lname;
+ownername = getdeal.get("Owner").get("name");
+Billing_Street = ifnull(getAccount.get("Billing_Street"),"");
+Billing_City = ifnull(getAccount.get("Billing_City"),"");
+Billing_State = ifnull(getAccount.get("Billing_State"),"");
+Billing_Code = ifnull(getAccount.get("Billing_Code"),"");
+Contact_Email = ifnull(getContact.get("Email"),"");
+Finance_Fee = ifnull(getdeal.get("Finance_Fee"),"");
+Contact_Name = ifnull(getdeal.get("Contact_Name").get("name"),"");
+DealName = ifnull(getdeal.get("Deal_Name"),"");
+Owner_ID = ifnull(getdeal.get("Owner").get("id"),"");
+fullname = fname + " " + lname;
+sd = {{"recipient_1":email,"recipient_name":fullname,"action_type":"sign"},{"recipient_2":Sales_VendorEmail,"recipient_name":Sales_Vendor_fullname,"action_type":"view"},{"recipient_3":referrer2Email,"recipient_name":referrer2_fullname,"action_type":"view"},{"recipient_4":referrer3Email,"recipient_name":referrer3_fullname,"action_type":"view"}};
+data = Map();
+data.put("Deal_Name",DealName);
+data.put("Account_Name.Billing_Street",Billing_Street);
+data.put("Account_Name.Billing_City",Billing_City);
+data.put("Account_Name.Billing_State",Billing_State);
+data.put("Account_Name.Billing_Code",Billing_Code);
+data.put("Contact_Name.Email",Contact_Email);
+data.put("Finance_Fee",Finance_Fee);
+data.put("Deal_Name",DealName);
+data.put("Contact_Name",Contact_Name);
+data.put("Deal_Name",DealName);
+data.put("Account_Name.Billing_Street",Billing_Street);
+data.put("Account_Name.Billing_City",Billing_City);
+data.put("Account_Name.Billing_State",Billing_State);
+data.put("Account_Name.Billing_Code",Billing_Code);
+data.put("Deal_Name",DealName);
+data.put("Contact_Name",Contact_Name);
+data.put("Deal_Name",DealName);
+data.put("Contact_Name",Contact_Name);
+data.put("id",Did);
+data.put("Sales_Vendor.Email",Sales_VendorEmail);
+data.put("Deals.Deal Name",DealName);
+data.put("owner_id",Owner_ID);
+List1 = List();
+List1.add(data);
+dmp = Map();
+dmp.put("data",List1);
+mp = Map();
+mp.put("service_name","zohosign");
+mp.put("filename",DealName + " - SKC ERC Client Services Agreement");
+mp.put("subject",DealName + " - SKC ERC Client Services Agreement");
+mp.put("signer_data",sd);
+mp.put("merge_data",dmp);
+mergesign = invokeurl
+[
+	url :"https://writer.zoho.com/api/v1/documents/p8oa472bb7e0e7da94885bc47bb788e573496/merge/sign"
+	type :POST
+	parameters:mp
+	connection:"writersign"
+];
+info Contact_Email;
+info mergesign;
+docId_records = mergesign.get("records");
+docId = docId_records.get("0").get("sign_request_id");
+info docId;
+pMap = Map();
+pMap.put("request_id",docId);
+pMap.put("email",getdeal.get("Owner").get("email"));
+//change docuemnt owner
+ZohoFlowWebhook = "https://flow.zoho.com/782861226/flow/webhook/incoming?zapikey=1001.dc0ed8e3a4bc1631f23d938c772d811b.4982d6221a0705f567f9ed179bbf3937&isdebug=false";
+changeOwner = invokeurl
+[
+	url :ZohoFlowWebhook
+	type :POST
+	parameters:pMap
+];
+mp1 = Map();
+mp1.put("Stage","Contract Sent (via Zoho)");
+dealup = zoho.crm.updateRecord("Deals",Did,mp1);
