@@ -1,0 +1,297 @@
+void automation.Create_Sales_Order1(Int contactid,String ordnumber,Int ordid,Int accountid,Bool digitalonly)
+{
+//Get Order Details
+orddetails = zoho.crm.getRecordById("Web_Orders",ordid);
+orddetails = orddetails.tomap();
+//fix province
+if(orddetails.get("Shipping_Province_State") = "Newfoundland & Labrador")
+{
+	shipprovince = "Newfoundland and Labrador";
+}
+else
+{
+	shipprovince = orddetails.get("Shipping_Province_State");
+}
+if(orddetails.get("Billing_Province_State") = "Newfoundland & Labrador")
+{
+	billprovince = "Newfoundland and Labrador";
+}
+else
+{
+	billprovince = orddetails.get("Billing_Province_State");
+}
+// Replace with your actual Books organization ID
+org_id = xxxxxxx;
+// Get CRM record details
+contact = zoho.crm.getRecordById("Contacts",contactid);
+contactname = contact.get("Full_Name");
+info contactname;
+email = contact.get("Email");
+// Step 1: if "account" is empty, find Zoho Books Contact ID in Zoho Books based on CRM Reference ID
+if(isnull(accountid))
+{
+	searchParam = {"zcrm_contact_id":contactid};
+	contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+	contactresponse = contactresponse.tomap();
+	info contactresponse;
+	contacts = contactresponse.get("contacts");
+	try 
+	{
+		contacts = contacts.toMap();
+		contactbooksid = contacts.get("contact_id");
+		info contactbooksid;
+	}
+	catch (e)
+	{
+		try 
+		{
+			searchParam = {"email":email};
+			contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+			contactresponse = contactresponse.tomap();
+			info contactresponse;
+			contacts = contactresponse.get("contacts");
+			contacts = contacts.toMap();
+			contactbooksid = contacts.get("contact_id");
+			info contactbooksid;
+		}
+		catch (e)
+		{
+			response = invokeurl
+			[
+				url :"https://www.zohoapis.com/books/v3/crm/contact/" + contactid + "/import?organization_id=" + org_id
+				type :POST
+				connection:"books"
+			];
+			info response;
+			searchParam = {"zcrm_contact_id":contactid};
+			contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+			contactresponse = contactresponse.tomap();
+			info contactresponse;
+			contacts = contactresponse.get("contacts");
+			contacts = contacts.toMap();
+			contactbooksid = contacts.get("contact_id");
+		}
+	}
+}
+// Step 2: if "account" is NOT empty, find Zoho Books ACCOUNT ID in Zoho Books based on CRM Reference ID
+if(!isnull(accountid))
+{
+	searchParam = {"zcrm_account_id":accountid};
+	contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+	contactresponse = contactresponse.tomap();
+	info contactresponse;
+	contacts = contactresponse.get("contacts");
+	try 
+	{
+		contacts = contacts.toMap();
+		contactbooksid = contacts.get("contact_id");
+		info contactbooksid;
+	}
+	catch (e)
+	{
+		try 
+		{
+			searchParam = {"email":email};
+			contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+			contactresponse = contactresponse.tomap();
+			info contactresponse;
+			contacts = contactresponse.get("contacts");
+			contacts = contacts.toMap();
+			contactbooksid = contacts.get("contact_id");
+			info contactbooksid;
+		}
+		catch (e)
+		{
+			response = invokeurl
+			[
+				url :"https://www.zohoapis.com/books/v3/crm/contact/" + accountid + "/import?organization_id=" + org_id
+				type :POST
+				connection:"books"
+			];
+			info response;
+			searchParam = {"zcrm_account_id":accountid};
+			contactresponse = zoho.books.getRecords("Contacts",org_id,searchParam,"books");
+			contactresponse = contactresponse.tomap();
+			info contactresponse;
+			contacts = contactresponse.get("contacts");
+			contacts = contacts.toMap();
+			contactbooksid = contacts.get("contact_id");
+		}
+	}
+}
+// Collect order lines
+orderlines = zoho.crm.searchRecords("NAV_Lines","(NAV_Order_Text:equals:" + ordnumber + ")");
+line_items = list();
+custom_fields = list();
+for each  item in orderlines
+{
+	// FIND ITEM ID IN ZOHO BOOKS
+	// Step 1: Get CRM Product Record
+	info item;
+	if(!isnull(item.get("Product1")))
+	{
+		product_id = item.get("Product1").get("id");
+		description = item.get("Description");
+		info description;
+		// Replace with dynamic value if used in a function
+		product = zoho.crm.getRecordById("Products",product_id);
+		sku = product.get("Product_Code");
+		name = product.get("Product_Name");
+		// or use "ISBN_No" or another unique field
+		// Step 2: Search Zoho Inventory (Books) by SKU
+		inventory_item = invokeurl
+		[
+			url :"https://inventory.zoho.com/api/v1/items?sku=" + sku
+			type :GET
+			connection:"inventory"
+		];
+		// Step 3: Extract and return the item_id
+		books_item_id = "";
+		if(inventory_item.get("code") == 0 && inventory_item.get("items").size() > 0)
+		{
+			books_item_id = inventory_item.get("items").get(0).get("item_id");
+			info "Books Item ID: " + books_item_id;
+		}
+		else
+		{
+			info "Item not found in Zoho Books for SKU: " + sku;
+		}
+		//item custom fields
+		itemcustomlist = list();
+		itemcustomfields = Map();
+		itemcustomfields.put("customfield_id","5713111000074022354");
+		itemcustomfields.put("field_id","5713111000074022354");
+		itemcustomfields.put("value",item.get("Variant"));
+		itemcustomlist.add(itemcustomfields);
+		//CREATE MAPPING FOR THE SALES ORDER
+		line_item_map = Map();
+		line_item_map.put("item_id",books_item_id);
+		line_item_map.put("rate",item.get("Unit_Price"));
+		line_item_map.put("quantity",item.get("Quantity"));
+		line_item_map.put("discount",item.get("Line_Discount_Text"));
+		line_item_map.put("name",name);
+		//line_item_map.put("item_custom_fields",itemcustomlist);
+		line_item_map.put("description",description);
+		// 		line_item_map.put("tax_id",taxrate);
+		line_items.add(line_item_map);
+		info line_items;
+	}
+}
+// Update Shipping Address for Customer
+shipping_address = Map();
+if(!isnull(orddetails.get("Shipping_Street_1")))
+{
+	shipping_address.put("attention",contactname);
+	shipping_address.put("address",orddetails.get("Shipping_Street_1"));
+	shipping_address.put("street2",orddetails.get("Shipping_Street_2"));
+	shipping_address.put("city",orddetails.get("Shipping_City"));
+	shipping_address.put("state",shipprovince);
+	shipping_address.put("zip",orddetails.get("Shipping_Postal_Code"));
+	shipping_address.put("country",orddetails.get("Shipping_Country"));
+}
+else
+{
+	shipping_address.put("attention",contactname);
+	shipping_address.put("address",orddetails.get("Billing_Street_1"));
+	shipping_address.put("street2",orddetails.get("Billing_Street_2"));
+	shipping_address.put("city",orddetails.get("Billing_City"));
+	shipping_address.put("state",billprovince);
+	shipping_address.put("zip",orddetails.get("Billing_Postal_Code"));
+	shipping_address.put("country",orddetails.get("Billing_Country"));
+}
+update_map = Map();
+update_map.put("shipping_address",shipping_address);
+shippingresponse = invokeurl
+[
+	url :"https://www.zohoapis.com/books/v3/contacts/" + contactbooksid + "?organization_id=" + org_id
+	type :PUT
+	parameters:update_map.toString()
+	connection:"books"
+];
+shippingresponse = shippingresponse.tomap();
+contactinfo = shippingresponse.get("contact");
+contactinfo = contactinfo.tomap();
+shippingaddressinfo = contactinfo.get("shipping_address");
+shippingaddressid = shippingaddressinfo.get("address_id");
+// Update Billing Address for Customer
+billing_address = Map();
+billing_address.put("attention",contactname);
+billing_address.put("address",orddetails.get("Billing_Street_1"));
+billing_address.put("street2",orddetails.get("Billing_Street_2"));
+billing_address.put("city",orddetails.get("Billing_City"));
+billing_address.put("state",billprovince);
+billing_address.put("zip",orddetails.get("Billing_Postal_Code"));
+billing_address.put("country",orddetails.get("Billing_Country"));
+update_map = Map();
+update_map.put("billing_address",billing_address);
+billingresponse = invokeurl
+[
+	url :"https://www.zohoapis.com/books/v3/contacts/" + contactbooksid + "?organization_id=" + org_id
+	type :PUT
+	parameters:update_map.toString()
+	connection:"books"
+];
+info billingresponse;
+billingresponse = billingresponse.tomap();
+contactinfo = billingresponse.get("contact");
+contactinfo = contactinfo.tomap();
+billingaddressinfo = contactinfo.get("billing_address");
+billingaddressid = billingaddressinfo.get("address_id");
+//Custom fields
+custom_fields_map1 = Map();
+custom_fields_map2 = Map();
+custom_fields_map3 = Map();
+custom_fields_map1.put("customfield_id",5713111000015480954);
+custom_fields_map1.put("value","Web Order");
+custom_fields_map3.put("customfield_id",5713111000025072169);
+custom_fields_map3.put("value",digitalonly);
+// custom_fields_map2.put("customfield_id",5713111000024219886);
+// custom_fields_map2.put("value",orddetails.get("Web_Order_ID"));
+custom_fields.add(custom_fields_map1);
+custom_fields.add(custom_fields_map2);
+custom_fields.add(custom_fields_map3);
+info custom_fields;
+// Build the Sales Order map
+sales_order_map = Map();
+sales_order_map.put("customer_id",contactbooksid);
+// Store Zoho Books contact ID in CRM
+sales_order_map.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+sales_order_map.put("line_items",line_items);
+sales_order_map.put("shipping_address_id",shippingaddressid);
+sales_order_map.put("billing_address_id",billingaddressid);
+sales_order_map.put("custom_fields",custom_fields);
+sales_order_map.put("shipping_charge",orddetails.get("Shipping") * 1.00);
+sales_order_map.put("shipping_charge_tax_id",5713111000000110052);
+sales_order_map.put("reference_number","WO-" + orddetails.get("Web_Order_ID"));
+// Optional
+// Make API call to Zoho Books
+response = invokeurl
+[
+	url :"https://books.zoho.com/api/v3/salesorders?organization_id=" + org_id
+	type :POST
+	parameters:sales_order_map.toString()
+	connection:"books"
+];
+// Optional: log or store the response
+info response.toString();
+// Parse Sales Order response
+response = response.toMap();
+salesorder = response.get("salesorder");
+salesorder_id = salesorder.get("salesorder_id");
+salesorder_no = salesorder.get("salesorder_number");
+info salesorder_no;
+somap = Map();
+somap.put("Sales_Order_No",salesorder_no);
+updateorder = zoho.crm.updateRecord("Web_Orders",ordid,somap);
+info updateorder;
+// Step 1: Confirm the Sales Order
+confirm_url = "https://www.zohoapis.com/books/v3/salesorders/" + salesorder_id + "/status/confirmed?organization_id=" + org_id;
+confirm_response = invokeurl
+[
+	url :confirm_url
+	type :POST
+	connection:"books"
+];
+info confirm_response;
+info "Sales Order Confirmed";
+}
