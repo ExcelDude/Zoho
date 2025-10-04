@@ -1,0 +1,131 @@
+string standalone.send_sign_applicant_request(Int dealId)
+{
+// ================= CONFIG =================
+BASE_URL = "https://sign.zohocloud.ca";
+// CHANGE for your DC: .eu / .in / .com.au / .ca
+SIGN_CONN = "zohosign";
+// OAuth connection to Zoho Sign (ZohoSign.documents.ALL)
+Applicatnt_TEMPLATE_ID = "9198000000031011";
+Consent_TEMPLATE_ID = "9198000000018045";
+// Prefer exact ID; otherwise leave "" and use name fallback
+TEMPLATE_NAME_FALLBACK = "Github Test File";
+// (Optional) exact template name to search if ID is blank
+DEAL_MODULE = "Deals";
+DEAL_URL_FIELD = "Applicant_Code_of_Conduct_Zoho_Sign";
+DEAL_REQID_FIELD = "Applicant_Code_of_Conduct_Request_Id";
+// ================ CONTEXT =================
+deal = zoho.crm.getRecordById(DEAL_MODULE,dealId);
+if(deal == null || deal.isEmpty())
+{
+	info "Deal not found: " + dealId;
+}
+// Resolve signer from contact lookup
+signer_name = "";
+signer_email = "";
+if(deal.get("Contact_Name") != null && deal.get("Contact_Name").get("id") != null)
+{
+	contact = zoho.crm.getRecordById("Contacts",deal.get("Contact_Name").get("id").toLong());
+	if(contact != null)
+	{
+		signer_name = ifnull(contact.get("Full_Name"),ifnull(contact.get("First_Name"),"") + " " + ifnull(contact.get("Last_Name"),"")).trim();
+		signer_email = ifnull(contact.get("Email"),"").trim();
+	}
+}
+if(isNull(signer_email) || signer_email == "")
+{
+	info "Missing signer email on contact for deal " + dealId;
+	info "Missing signer email.";
+}
+if(isNull(signer_name) || signer_name == "")
+{
+	signer_name = signer_email;
+}
+/////////////////////////////////////////////////////////////////////
+// ============== STEP 1: VERIFY TEMPLATE ==============
+/////////////////////////////////////////////////////////////////////
+template_ok = false;
+resolved_template_id = Applicatnt_TEMPLATE_ID;
+// If you have an ID, verify it:
+if(!isNull(resolved_template_id) && resolved_template_id != "")
+{
+	verify_resp = zoho.sign.getTemplateById(resolved_template_id,"zohosign");
+	info "Verify template RAW: " + verify_resp.toString();
+	if(verify_resp != null && verify_resp.get("templates") != null)
+	{
+		template_ok = true;
+	}
+	else if(verify_resp != null && verify_resp.get("code") == 9004)
+	{
+		info "Template ID not found in this DC/org. code=9004";
+		template_ok = false;
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////
+// ============== STEP 2: "Applicant Code of Condutct: BUILD CREATE BODY ==============
+///////////////////////////////////////////////////////////////////////////////////////
+deal_name = ifnull(deal.get("Deal_Name"),dealId + "");
+acc_name = "";
+if(deal.get("Account_Name") != null)
+{
+	acc_name = ifnull(deal.get("Account_Name").get("name"),"");
+}
+field_text_data = List();
+field_text_data.add({"field_name":"DealName","field_value":deal_name});
+field_text_data.add({"field_name":"DealAmount","field_value":ifnull(deal.get("Amount"),"") + ""});
+field_text_data.add({"field_name":"AccountName","field_value":acc_name});
+actionMap = Map();
+fieldTextData = Map();
+fieldTextData.put("TextField_1","Document to Review");
+actionMap.put("field_data",{"field_text_data":fieldTextData});
+eachActionMap1 = Map();
+eachActionMap1.put("recipient_name",signer_name);
+eachActionMap1.put("recipient_email",signer_email);
+eachActionMap1.put("action_type","SIGN");
+eachActionMap1.put("action_id","9198000000031032");
+eachActionMap1.put("role","Signer");
+eachActionMap1.put("verify_recipient","false");
+fieldList = List();
+fieldList.add(eachActionMap1);
+actionMap.put("actions",fieldList);
+submitMap = Map();
+submitMap.put("templates",actionMap);
+parameters = Map();
+parameters.put("is_quicksend","true");
+parameters.put("data",submitMap);
+/////////////////////////////////////////////////////////////////////
+// ============== STEP 3: CREATE REQUEST FROM TEMPLATE ==============
+/////////////////////////////////////////////////////////////////////
+create_resp = zoho.sign.createUsingTemplate(resolved_template_id,parameters,"zohosign");
+info "Create-from-template RAW: " + create_resp.toString();
+// Handle “No match found” here → wrong template/DC
+if(create_resp != null && create_resp.get("code") == 9004)
+{
+	info "Create failed (9004 No match found). Likely wrong template ID/DC/org or template not shared.";
+}
+// Validate success
+requests_node = create_resp.get("requests");
+if(requests_node == null)
+{
+	info "Create failed. Code: " + ifnull(create_resp.get("code"),"") + " | Message: " + ifnull(create_resp.get("message"),"") + " | Errors: " + ifnull(create_resp.get("errors"),"");
+}
+request_id = ifnull(requests_node.get("request_id"),"");
+if(request_id == "")
+{
+	info "Create succeeded but no request_id returned. RAW: " + create_resp.toString();
+}
+info request_id;
+action_id = "9198000000031032";
+/////////////////////////////////////////////////////////////////////
+// ============== STEP 4: UPDATE DEAL & LOG ==============
+/////////////////////////////////////////////////////////////////////
+update_map = Map();
+update_map.put(DEAL_REQID_FIELD,request_id);
+upd = zoho.crm.updateRecord(DEAL_MODULE,dealId,update_map);
+note_map = Map();
+note_map.put("Note_Title","Zoho Sign Consent Request Created");
+note_map.put("Note_Content","Request ID: " + request_id + "\nSigner email sent by Zoho Sign (URL not returned).");
+note_map.put("Parent_Id",dealId.toString());
+note_map.put("se_module",DEAL_MODULE);
+zoho.crm.createRecord("Notes",note_map);
+return "";
+}
