@@ -1,0 +1,11 @@
+import {buildFinancePreview} from "./finance_preview.mjs";
+import assert from "node:assert/strict";
+const snapshot={"properties":[{"id":"p","management_status":"active"}],"tenants":[{"id":"t"}],"owners":[{"id":"o"}],"property_ownership":[{"property_id":"p","owner_id":"o","ownership_percentage":"100"}],"leases":[{"id":"l","status":"active","property_id":"p","tenant_id":"t","start_date":"2026-11-01","rent_amount":"3000"}]};
+const agreement={"property_id":"p","agreement_id":"AG-1","signed":true,"type":"FURNISHED_V4","version":"4.0","effective_start":"2026-11-01","owner_entitlement_verified":true,"rent_terms_verified":true};
+const links=[{tenant_id:"t",books_contact_id:"B1",verified:true}];
+let a=buildFinancePreview({snapshot});assert(a[0].blocks.includes("NO_SIGNED_EFFECTIVE_AGREEMENT"));assert.equal(a[0].postingAllowed,false);
+let b=buildFinancePreview({snapshot,agreements:[agreement],identityLinks:links,approvedAccounting:true});assert.equal(b[0].decision,"READY_FOR_APPROVED_STAGING");assert.equal(b[0].postingAllowed,false);assert.equal(b[0].monitorStatus,"NOT_QUEUED");
+let c=buildFinancePreview({snapshot,agreements:[{...agreement,type:"PLACEMENT_V1"}],identityLinks:links,approvedAccounting:true});assert(c[0].blocks.includes("PLACEMENT_ONLY_NO_MONTHLY_RENT_BILLING"));
+let d=buildFinancePreview({snapshot,agreements:[{...agreement,type:"LEGACY"}],identityLinks:links,approvedAccounting:true});assert(d[0].blocks.includes("LEGACY_FEE_TERMS_UNVERIFIED"));
+let e=buildFinancePreview({snapshot,agreements:[agreement,agreement],identityLinks:links,approvedAccounting:true});assert(e[0].blocks.includes("AMBIGUOUS_AGREEMENT"));
+console.log("5 integrated preflight scenarios passed; zero postings");
