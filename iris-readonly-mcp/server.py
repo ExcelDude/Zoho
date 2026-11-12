@@ -49,7 +49,7 @@ def issue(payload, seconds):
 def verify(token, kind):
     try:
         claims = jwt.decode(token, SIGNING_KEY, algorithms=["HS256"],
-                            issuer=ORIGIN, options={"require": ["exp", "iat", "iss", "jti"]})
+                            issuer=ORIGIN, options={"require": ["exp", "iat", "iss", "jti"], "verify_aud": False})
         if claims.get("kind") != kind: return None
         return claims
     except jwt.PyJWTError:
