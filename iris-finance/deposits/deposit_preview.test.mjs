@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import {deadlinePreview,depositInterestPreview} from "./deposit_preview.mjs";
+assert.equal(deadlinePreview({tenancyEndedAt:"2026-11-01",forwardingAddressReceivedAt:"2026-11-04"}).refundDueAt,"2026-11-19");
+assert.equal(deadlinePreview({tenancyEndedAt:"2026-11-20",forwardingAddressReceivedAt:"2026-11-01"}).refundDueAt,"2026-12-05");
+assert.equal(deadlinePreview({tenancyEndedAt:"2026-11-20"}).refundDueAt,null);
+assert.equal(deadlinePreview({tenancyEndedAt:"2026-11-20",forwardingAddressReceivedAt:"2026-11-21",custodyType:"PLACEMENT_ONLY"}).refundDueAt,null);
+const zero=depositInterestPreview({depositCents:150000,custodyStart:"2026-03-01",custodyEnd:"2026-11-01",annualRatesPct:{2026:0}});
+assert.equal(zero.interestCents,0);assert.equal(zero.postingAllowed,false);
+assert.equal(depositInterestPreview({depositCents:150000,custodyStart:"2026-03-01",custodyEnd:"2027-01-01",annualRatesPct:{2026:0}}).status,"HOLD");
+assert.equal(depositInterestPreview({depositCents:150000,custodyStart:"2025-03-01",custodyEnd:"2026-11-01",annualRatesPct:{2025:.95,2026:0}}).reason,"NONZERO_INTEREST_NEEDS_RTB_CALCULATOR_PARITY");
+assert.equal(depositInterestPreview({depositCents:-10,custodyStart:"2026-01-01",custodyEnd:"2026-03-01",annualRatesPct:{2026:0}}).status,"HOLD");
+console.log("8 deposit and deadline tests passed");
