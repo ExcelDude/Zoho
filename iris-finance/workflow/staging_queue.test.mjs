@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import {FinanceEventMonitor} from "../event-monitor/finance_event_monitor.mjs";
+import {queueStagingIntent} from "./staging_queue.mjs";
+const m=new FinanceEventMonitor();const preview={"decision":"READY_FOR_APPROVED_STAGING","postingAllowed":false,"agreement_id":"A1","charge_intent_key":"2027-01|L1|RENT_CHARGE","amount_cents":300000};
+assert.equal(queueStagingIntent({preview,monitor:m,orgId:"IRIS_TEST",payloadSha256:"a".repeat(64)}).queued,false);
+const first=queueStagingIntent({preview,monitor:m,orgId:"IRIS_TEST",payloadSha256:"a".repeat(64),approvedStaging:true});assert.equal(first.queued,true);assert.equal(first.writeEnabled,false);
+const again=queueStagingIntent({preview,monitor:m,orgId:"IRIS_TEST",payloadSha256:"a".repeat(64),approvedStaging:true});assert.equal(again.monitorResult.replayed,true);
+assert.equal(queueStagingIntent({preview,monitor:m,orgId:"IRIS_TEST",payloadSha256:"b".repeat(64),approvedStaging:true}).monitorResult.conflict,true);
+assert.equal(queueStagingIntent({preview:{...preview,decision:"BLOCKED"},monitor:m,orgId:"IRIS_TEST",payloadSha256:"a".repeat(64),approvedStaging:true}).queued,false);
+assert.equal(m.snapshot().total,1);
+console.log("6 staging queue assertions passed; no Books posting");
