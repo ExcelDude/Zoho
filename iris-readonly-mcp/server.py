@@ -18,6 +18,7 @@ import httpx
 import jwt
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
@@ -93,7 +94,16 @@ async def upstream(path, params=None):
             result.status_code, body.get("error","upstream_error"), body.get("request_id","unknown")))
     return result.json()
 
-mcp=FastMCP("Iris Properties Read-only",stateless_http=True,json_response=True)
+mcp=FastMCP(
+    "Iris Properties Read-only",
+    stateless_http=True,
+    json_response=True,
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=["iris-readonly-mcp.onrender.com", "iris-readonly-mcp.onrender.com:*"],
+        allowed_origins=["https://chatgpt.com", "https://chat.openai.com"],
+    ),
+)
 
 @mcp.tool()
 async def discover_schema() -> dict:
