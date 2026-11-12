@@ -200,6 +200,7 @@ async def authorize_get(request):
 async def authorize_post(request):
     form=await request.form()
     p=validated_oauth_params({**dict(form),"response_type":"code",
+                              "code_challenge":form.get("challenge",""),
                               "code_challenge_method":"S256"})
     if p is None: return json_error("invalid_request")
     ip=request.client.host if request.client else "unknown"
