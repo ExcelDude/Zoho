@@ -28,7 +28,7 @@ function validateAgreements(rows,{asOf="2027-01-01"}={}){
   if(a.type==="FURNISHED_V4"&&pct!==20&&a.special_rate_approved!=="YES")issues.push("RATE_EXCEPTION_APPROVAL_REQUIRED");
   if(a.type==="UNFURNISHED_V4"&&pct!==10&&a.special_rate_approved!=="YES")issues.push("RATE_EXCEPTION_APPROVAL_REQUIRED");
   if(a.type==="PLACEMENT_V1"&&pct!==0)issues.push("PLACEMENT_NO_MANAGEMENT_FEE");
-  if(a.type==="LEGACY"&&!a.legacy_terms_verified)issues.push("LEGACY_TERMS_REQUIRED");
+  if(a.type==="LEGACY"&&!["YES",true].includes(a.legacy_terms_verified))issues.push("LEGACY_TERMS_REQUIRED");
   if(a.nonresident==="YES"&&!["YES","NO"].includes(a.nonresident_verified))issues.push("NR_STATUS_VERIFICATION_REQUIRED");
   if(a.agreement_id){if(ids.has(a.agreement_id))issues.push("DUPLICATE_AGREEMENT_ID");ids.set(a.agreement_id,true)}
   const r={...a,issues,status:issues.length?"HOLD":"VALIDATED_FOR_REVIEW",postingAllowed:false,row:i+2};
