@@ -14,4 +14,5 @@ assert.equal(parseCSV('\uFEFFagreement_id,version\r\nTEST,4.0\r\n')[0].version,"
 assert(validateAgreements([{...sample,nonresident:"YES"}]).records[0].issues.includes("NR_STATUS_VERIFICATION_REQUIRED"));
 assert(validateAgreements([{...sample,signed_at:"2026-12-01"}]).records[0].issues.includes("SIGNED_AFTER_EFFECTIVE_START_REVIEW"));
 assert.equal(validateAgreements([sample]).postingAllowed,false);
+assert(validateAgreements([{...sample,type:"LEGACY",management_pct:"7.5",legacy_terms_verified:"NO"}]).records[0].issues.includes("LEGACY_TERMS_REQUIRED"));
 console.log("13 agreement registry assertions passed.");
