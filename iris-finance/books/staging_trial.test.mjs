@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {executeStagingTrial} from "./staging_trial.mjs";
+const expected={"organization_id":"TEST-ORG-100","customer_id":"TEST-OWNER-100","source_event_id":"IRIS-STAGE-TEST-0001","validated_agreement_id":"TEST-AG-0001","item_id":"242438000000032035","tax_id":"242438000000031068","base_cents":60000,"gst_cents":3000};
+const config={"mode":"ISOLATED_TEST","allowWrite":true,"orgId":"TEST-ORG-100","testOrgConfirmed":true,"testCustomerId":"TEST-OWNER-100","testCustomerConfirmed":true};
+const good={findByReference:async()=>[],createDraft:async()=>({invoice_id:"STAGE-INV-01"}),getById:async()=>({invoice_id:"STAGE-INV-01",customer_id:"TEST-OWNER-100",reference_number:"IRIS-STAGE-TEST-0001",status:"draft",line_items:[{item_id:expected.item_id,tax_id:expected.tax_id}],total_cents:63000})};
+assert.equal((await executeStagingTrial({config:{...config,orgId:"110003520057"},expected,adapter:good})).state,"NOT_EXECUTED");
+assert.equal((await executeStagingTrial({config:{...config,allowWrite:false},expected,adapter:good})).state,"NOT_EXECUTED");
+assert.equal((await executeStagingTrial({config:{...config,testCustomerConfirmed:false},expected,adapter:good})).state,"NOT_EXECUTED");
+assert.equal((await executeStagingTrial({config,expected,adapter:good})).state,"STAGING_DRAFT_VERIFIED");
+assert.equal((await executeStagingTrial({config,expected,adapter:{...good,findByReference:async()=>[{invoice_id:"DUP"}]}})).state,"HOLD_EXISTING_REFERENCE");
+assert.equal((await executeStagingTrial({config,expected,adapter:{...good,createDraft:async()=>{throw Error("timeout")}}})).state,"UNCERTAIN_AFTER_WRITE_ATTEMPT");
+assert.equal((await executeStagingTrial({config,expected,adapter:{...good,getById:async()=>({...await good.getById(),total_cents:60000})}})).state,"CREATED_BUT_RECONCILIATION_HOLD");
+console.log("7 mock adapter staging scenarios passed. No real Books action.");
