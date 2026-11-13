@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import {parseCSV,validateAgreements} from "./registry.mjs";
+const sample={"agreement_id":"TEST-AG-1","owner_id":"TEST-OWNER","property_id":"TEST-PROP","type":"FURNISHED_V4","version":"4.0","signed_at":"2026-11-12","effective_start":"2026-11-13","effective_end":"","management_pct":"20","document_ref":"IRIS_INTERNAL_REF","review_status":"APPROVED","nonresident":"NO"};
+assert.equal(validateAgreements([sample]).summary.ready,1);
+assert.equal(validateAgreements([{...sample,review_status:"DRAFT"}]).summary.held,1);
+assert(validateAgreements([{...sample,type:"LEGACY",management_pct:"7.5"}]).records[0].issues.includes("LEGACY_TERMS_REQUIRED"));
+assert(validateAgreements([{...sample,management_pct:"18"}]).records[0].issues.includes("RATE_EXCEPTION_APPROVAL_REQUIRED"));
+assert(validateAgreements([{...sample,type:"PLACEMENT_V1",management_pct:"10"}]).records[0].issues.includes("PLACEMENT_NO_MANAGEMENT_FEE"));
+assert.equal(validateAgreements([sample,{...sample,agreement_id:"TEST-AG-2",effective_start:"2027-01-01"}]).summary.held,2);
+assert.equal(validateAgreements([sample,{...sample,agreement_id:"TEST-AG-2",effective_start:"2027-01-01",property_id:"P2"}]).summary.ready,2);
+assert.equal(validateAgreements([{...sample,effective_end:"2026-11-10"}]).summary.held,1);
+assert.equal(parseCSV('agreement_id,version\n"TEST, ONE","4.0"\n')[0].agreement_id,"TEST, ONE");
+assert.equal(parseCSV('\uFEFFagreement_id,version\r\nTEST,4.0\r\n')[0].version,"4.0");
+assert(validateAgreements([{...sample,nonresident:"YES"}]).records[0].issues.includes("NR_STATUS_VERIFICATION_REQUIRED"));
+assert(validateAgreements([{...sample,signed_at:"2026-12-01"}]).records[0].issues.includes("SIGNED_AFTER_EFFECTIVE_START_REVIEW"));
+assert.equal(validateAgreements([sample]).postingAllowed,false);
+console.log("13 agreement registry assertions passed.");
