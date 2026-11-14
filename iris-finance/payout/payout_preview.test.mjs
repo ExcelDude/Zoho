@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {prepareOwnerPayout} from './payout_preview.mjs';
+const controls={verifiedOwnerBooksId:true,signedEffectiveAgreement:true,ownershipSnapshotApproved:true,openingBalanceApproved:true,bankReconciled:true,trustLedgerReconciled:true,managingBrokerApproval:true};
+const base={period:'2027-01',ownerId:'TEST-O',propertyId:'TEST-P',openingBalanceCents:50000,reserveCents:20000,controls};
+const ev=(eventId,type,amountCents,clearedAt='2027-01-08',effectiveDate='2027-01-08')=>({eventId,type,amountCents,ownerId:'TEST-O',propertyId:'TEST-P',state:'SETTLED',booksEvidenceId:'TEST-BOOKS-'+eventId,clearedAt,effectiveDate});
+const events=[ev('rent','RENT_RECEIPT',300000),ev('fee','FEE_GST_TRANSFER',63000),ev('bill','OWNER_EXPENSE',20000),ev('withhold','NR_WITHHOLDING',75000)];
+let x=prepareOwnerPayout({...base,events});assert.equal(x.proposedPayoutCents,172000);assert.equal(x.status,'REVIEW_CANDIDATE_ONLY');assert.equal(x.releaseAllowed,false);
+x=prepareOwnerPayout({...base,events:[...events,ev('late','RENT_RECEIPT',50000,'2027-01-11')]});assert.equal(x.proposedPayoutCents,172000);assert(x.excluded.some(e=>e.reason==='AFTER_CUTOFF'));
+x=prepareOwnerPayout({...base,events,controls:{...controls,bankReconciled:false}});assert.equal(x.status,'HOLD');
+x=prepareOwnerPayout({...base,events,controls:{...controls,verifiedOwnerBooksId:false}});assert.equal(x.status,'HOLD');
+x=prepareOwnerPayout({...base,events:[...events,events[0]]});assert.equal(x.status,'HOLD');
+x=prepareOwnerPayout({...base,openingBalanceCents:0,events:[ev('expense','OWNER_EXPENSE',10000)]});assert(x.blocking.includes('NEGATIVE_OWNER_TRUST_POSITION'));
+x=prepareOwnerPayout({...base,events:[{...ev('pending','RENT_RECEIPT',90000),state:'PENDING'}]});assert.equal(x.totals.rentReceiptsCents,0);
+x=prepareOwnerPayout({...base,events:[{...ev('other','RENT_RECEIPT',99999),ownerId:'other owner'}]});assert.equal(x.totals.rentReceiptsCents,0);
+x=prepareOwnerPayout({...base,events:[ev('old','RENT_RECEIPT',99000,'2026-12-28','2026-12-28')]});assert.equal(x.totals.rentReceiptsCents,0);
+x=prepareOwnerPayout({...base,events:[{...ev('unverified','RENT_RECEIPT',99000),booksEvidenceId:null}]});assert.equal(x.totals.rentReceiptsCents,0);
+x=prepareOwnerPayout({...base,events:[ev('prior-fee','FEE_GST_TRANSFER',5000,'2026-12-31','2026-12-31')]});assert.equal(x.totals.feeAndGstCents,0);
+console.log('11 payout preparation scenarios passed; always no posting');
