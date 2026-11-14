@@ -7,7 +7,7 @@ export function prepareOwnerPayout({period, ownerId, propertyId, openingBalanceC
   if(!ownerId||!propertyId)blocking.push('OWNER_OR_PROPERTY_REQUIRED');
   if(!Number.isSafeInteger(openingBalanceCents)||openingBalanceCents<0)blocking.push('OPENING_BALANCE_UNVERIFIED');
   if(!Number.isSafeInteger(reserveCents)||reserveCents<0)blocking.push('INVALID_RESERVE');
-  const required=['verifiedOwnerBooksId','signedEffectiveAgreement','ownershipSnapshotApproved','openingBalanceApproved','bankReconciled','trustLedgerReconciled','managingBrokerApproval'];
+  const required=['verifiedOwnerBooksId','signedEffectiveAgreement','ownershipSnapshotApproved','openingBalanceApproved','bankReconciled','trustLedgerReconciled','periodSourceComplete','outstandingChargesReviewed','managingBrokerApproval'];
   for(const name of required)if(controls[name]!==true)blocking.push(name.toUpperCase()+'_REQUIRED');
   const cutoff=period+'-10',observed=new Set();
   const totals={rentReceiptsCents:0,ownerTopupsCents:0,feeAndGstCents:0,ownerExpensesCents:0,nrWithholdingCents:0,alreadyPaidCents:0};
