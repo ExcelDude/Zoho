@@ -18,6 +18,10 @@ export function reviewCrosswalk({owners,booksContacts,ownership,rows}){
   if(x.evidence_ref&&/name-only|email-only|fuzzy|guess/i.test(x.evidence_ref))issues.push("UNSAFE_IDENTITY_EVIDENCE");
   out.push({iris_owner_id:x.iris_owner_id,books_contact_id:x.books_contact_id||null,status:issues.length?"HOLD":"APPROVED_IDENTITY_MAPPING",issues,postingAllowed:false});
  }
+ // Every participant in a duplicated mapping must be held, not only later rows.
+ const nOwner=new Map(),nBooks=new Map();
+ for(const x of rows){if(x.iris_owner_id)nOwner.set(x.iris_owner_id,(nOwner.get(x.iris_owner_id)||0)+1);if(x.books_contact_id)nBooks.set(x.books_contact_id,(nBooks.get(x.books_contact_id)||0)+1)}
+ for(const x of out){if(nOwner.get(x.iris_owner_id)>1&&!x.issues.includes("DUPLICATE_IRIS_OWNER_MAPPING"))x.issues.push("DUPLICATE_IRIS_OWNER_MAPPING");if(nBooks.get(x.books_contact_id)>1&&!x.issues.includes("DUPLICATE_BOOKS_CONTACT_MAPPING"))x.issues.push("DUPLICATE_BOOKS_CONTACT_MAPPING");if(x.issues.length)x.status="HOLD";}
  const ready=out.filter(x=>x.status==="APPROVED_IDENTITY_MAPPING").length;
  return {rows:out,summary:{total:out.length,approved:ready,held:out.length-ready},postingAllowed:false};
 }
