@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {prepareOwnerPayout} from './payout_preview.mjs';
-const controls={verifiedOwnerBooksId:true,signedEffectiveAgreement:true,ownershipSnapshotApproved:true,openingBalanceApproved:true,bankReconciled:true,trustLedgerReconciled:true,managingBrokerApproval:true};
+const controls={verifiedOwnerBooksId:true,signedEffectiveAgreement:true,ownershipSnapshotApproved:true,openingBalanceApproved:true,bankReconciled:true,trustLedgerReconciled:true,periodSourceComplete:true,outstandingChargesReviewed:true,managingBrokerApproval:true};
 const base={period:'2027-01',ownerId:'TEST-O',propertyId:'TEST-P',openingBalanceCents:50000,reserveCents:20000,controls};
 const ev=(eventId,type,amountCents,clearedAt='2027-01-08',effectiveDate='2027-01-08')=>({eventId,type,amountCents,ownerId:'TEST-O',propertyId:'TEST-P',state:'SETTLED',booksEvidenceId:'TEST-BOOKS-'+eventId,clearedAt,effectiveDate});
 const events=[ev('rent','RENT_RECEIPT',300000),ev('fee','FEE_GST_TRANSFER',63000),ev('bill','OWNER_EXPENSE',20000),ev('withhold','NR_WITHHOLDING',75000)];
@@ -15,4 +15,6 @@ x=prepareOwnerPayout({...base,events:[{...ev('other','RENT_RECEIPT',99999),owner
 x=prepareOwnerPayout({...base,events:[ev('old','RENT_RECEIPT',99000,'2026-12-28','2026-12-28')]});assert.equal(x.totals.rentReceiptsCents,0);
 x=prepareOwnerPayout({...base,events:[{...ev('unverified','RENT_RECEIPT',99000),booksEvidenceId:null}]});assert.equal(x.totals.rentReceiptsCents,0);
 x=prepareOwnerPayout({...base,events:[ev('prior-fee','FEE_GST_TRANSFER',5000,'2026-12-31','2026-12-31')]});assert.equal(x.totals.feeAndGstCents,0);
-console.log('11 payout preparation scenarios passed; always no posting');
+x=prepareOwnerPayout({...base,events,controls:{...controls,periodSourceComplete:false}});assert.equal(x.status,'HOLD');
+x=prepareOwnerPayout({...base,events,controls:{...controls,outstandingChargesReviewed:false}});assert.equal(x.status,'HOLD');
+console.log('13 payout preparation scenarios passed; always no posting');
