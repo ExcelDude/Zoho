@@ -3,7 +3,7 @@
 The goal is a **central integration layer**, not a change to Iris PMS. The current engine is no-write: it validates incoming source events, derives an immutable source/event/version identity, records a payload hash, claims work through a pluggable durable store, evaluates safety gates, and stores a projection for the bookkeeping team. No live Zoho Books write calls exist in this component.
 
 ## Event workflow
-1. Receive a versioned event from Iris or Books. `sourceSystem + sourceId + sourceVersion + event type` defines the idempotency key. Changes must supply a new sourceVersion; a different payload under the same key is QUARANTINED.
+1. Receive a versioned event from Iris or Books. `organizationId + sourceSystem + sourceId + event type + accountingPeriod (where applicable) + sourceVersion` defines the idempotency key. Changes must supply a new sourceVersion; a different payload under the same key is QUARANTINED.
 2. Atomically insert-or-get and claim through a durable transactional adapter. Repeated polling cannot run same event concurrently.
 3. Evaluate source identities, agreement rules, bank evidence, and approved snapshots. Missing data goes to HOLD and the exception dashboard.
 4. Save an immutable review projection with event origin, version, hash, and action. No invoice/payment/statement is created as part of this version.
