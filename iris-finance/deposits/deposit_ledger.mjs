@@ -67,6 +67,7 @@ export function prepareDepositRefund({ledger,tenancyEndDate,forwardingAddressRec
  if(deadline&&validDate(refundDate)&&refundDate>deadline)issues.push('REFUND_DEADLINE_EXCEEDED');
  for(const k of ['signedMoveOutReview','financeReviewerApproval','bankAndBooksDepositReconciled','depositInterestBenchmarkApproved'])if(controls[k]!==true)issues.push('CONTROL_'+k.toUpperCase()+'_REQUIRED');
  if(interestEstimate?.status!=='ESTIMATE_FOR_REVIEW'||!Number.isSafeInteger(interestEstimate?.interestEstimateCents)||!controls.interestAmountConfirmedAgainstRTB)issues.push('INTEREST_AMOUNT_UNVERIFIED');
+ if(validDate(refundDate)&&(!validDate(interestEstimate?.throughDate)||interestEstimate.throughDate<refundDate))issues.push('INTEREST_NOT_CALCULATED_THROUGH_REFUND_DATE');
  if(!Array.isArray(deductions))issues.push('INVALID_DEDUCTIONS');
  let totalDeductions=0;
  for(const d of deductions||[]){
