@@ -1,0 +1,25 @@
+name: Iris Finance Integration Safety Tests
+on:
+  push:
+    branches:
+      - iris-finance-integration-engine-v1
+    paths:
+      - 'iris-finance/integration/**'
+      - '.github/workflows/iris-finance-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration-dry-run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source syntax
+        run: |
+          node --check iris-finance/integration/engine.mjs
+          node --check iris-finance/integration/postgres_store.mjs
+      - name: Run integration dry-run test suite
+        run: node --test iris-finance/integration/engine.test.mjs
