@@ -1,0 +1,30 @@
+name: Iris Finance January Read-Only Simulation Tests
+on:
+  push:
+    branches:
+      - iris-finance-readonly-january-simulation
+    paths:
+      - 'iris-finance/integration/**'
+      - '.github/workflows/iris-finance-january-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readonly-simulation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate module syntax
+        run: |
+          node --check iris-finance/integration/engine.mjs
+          node --check iris-finance/integration/iris_readonly_adapter.mjs
+          node --check iris-finance/integration/january_runner.mjs
+          node --check iris-finance/integration/postgres_store.mjs
+      - name: Run no-write integration and January tests
+        run: |
+          node --test iris-finance/integration/engine.test.mjs
+          node --test iris-finance/integration/iris_readonly_adapter.test.mjs
+          node --test iris-finance/integration/january_runner.test.mjs
