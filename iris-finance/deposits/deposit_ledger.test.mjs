@@ -25,4 +25,6 @@ assert.equal(prepareDepositRefund({ledger,tenancyEndDate:'2026-12-01',forwarding
 const authorized=prepareDepositRefund({ledger,tenancyEndDate:'2026-12-01',forwardingAddressReceivedDate:'2026-12-05',refundDate:'2026-12-20',interestEstimate:interest,controls:refundControls,deductions:[{amountCents:20000,reason:'cleaning',invoiceOrEvidenceId:'INV-1',tenantWrittenAgreement:true}]});
 assert.equal(authorized.refundPreviewCents,180000);
 assert.equal(prepareDepositRefund({ledger,tenancyEndDate:'2026-12-01',forwardingAddressReceivedDate:'2026-12-05',refundDate:'2026-12-20',interestEstimate:interest,controls:{...refundControls,interestAmountConfirmedAgainstRTB:false}}).status,'HOLD');
-console.log('Deposit ledger: 17 synthetic test scenarios passed');
+const incompleteInterest=estimateDepositInterest({principalCents:200000,heldFrom:'2026-06-01',throughDate:'2026-12-10',rates:zeroRates});
+assert.equal(prepareDepositRefund({ledger,tenancyEndDate:'2026-12-01',forwardingAddressReceivedDate:'2026-12-05',refundDate:'2026-12-20',interestEstimate:incompleteInterest,controls:refundControls}).status,'HOLD');
+console.log('Deposit ledger: synthetic tests passed, zero writes');
