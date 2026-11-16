@@ -1,0 +1,23 @@
+name: Iris Tenant Deposit Safety Tests
+on:
+  push:
+    branches:
+      - iris-tenant-deposit-ledger-v1
+    paths:
+      - 'iris-finance/deposits/**'
+      - '.github/workflows/iris-tenant-deposits.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deposit-dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify syntax and run tests
+        run: |
+          node --check iris-finance/deposits/deposit_ledger.mjs
+          node --test iris-finance/deposits/deposit_ledger.test.mjs
