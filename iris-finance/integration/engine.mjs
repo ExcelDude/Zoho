@@ -19,7 +19,8 @@ export function validateEvent(event){
  if(!Number.isFinite(Date.parse(event.occurredAt)))throw Error('INVALID_EVENT_TIME');
  if(!event.payload||Array.isArray(event.payload)||typeof event.payload!=='object')throw Error('INVALID_PAYLOAD');
  if(event.organizationId!=='110003520057')throw Error('UNKNOWN_BOOKS_ORGANIZATION');
- const eventKey=[event.sourceSystem,event.sourceId,event.sourceVersion,event.type].map(encodeURIComponent).join('|');
+ if(['RENT_CYCLE_DUE','OWNER_FEE_ELIGIBLE','OWNER_STATEMENT_PREPARE'].includes(event.type)&&!/^\\d{4}-(0[1-9]|1[0-2])$/.test(event.accountingPeriod||''))throw Error('ACCOUNTING_PERIOD_REQUIRED');
+ const eventKey=[event.organizationId,event.sourceSystem,event.sourceId,event.type,event.accountingPeriod||'NA',event.sourceVersion].map(encodeURIComponent).join('|');
  return {...event,eventKey,payloadHash:digest(event.payload),plannedAction:ACTION[event.type]};
 }
 export function decideEvent({event,controls={}}){
