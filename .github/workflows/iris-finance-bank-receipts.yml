@@ -1,0 +1,26 @@
+name: Iris Finance Bank Receipt Matching Tests
+on:
+  push:
+    branches:
+      - iris-finance-bank-receipt-matching-v1
+    paths:
+      - 'iris-finance/integration/**'
+      - '.github/workflows/iris-finance-bank-receipts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readonly-bank-receipt-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and dry-run tests
+        run: |
+          node --check iris-finance/integration/receipt_matcher.mjs
+          node --test iris-finance/integration/receipt_matcher.test.mjs
+          node --test iris-finance/integration/engine.test.mjs
+          node --test iris-finance/integration/iris_readonly_adapter.test.mjs
+          node --test iris-finance/integration/january_runner.test.mjs
