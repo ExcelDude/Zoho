@@ -1,0 +1,23 @@
+name: Iris Owner Registry Read-Only QA
+on:
+  push:
+    branches:
+      - iris-owner-identity-agreements-live-v1
+    paths:
+      - 'iris-finance/identity/owner_registry*'
+      - '.github/workflows/iris-owner-registry.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  owner-reference-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run owner matching safety tests
+        run: |
+          node --check iris-finance/identity/owner_registry.mjs
+          node --test iris-finance/identity/owner_registry.test.mjs
