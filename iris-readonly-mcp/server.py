@@ -32,7 +32,8 @@ RESOURCES = frozenset({
     "properties", "leases", "tenants", "owners", "property_ownership",
     "property_vacancies", "property_events", "tenant_history",
     "property_tenant_waitlist", "maintenance_requests", "crm_leads",
-    "rent_metrics_snapshots", "mls_listings"
+    "rent_metrics_snapshots", "mls_listings",
+    "owner_contacts", "management_agreements", "workdrive_agreements"
 })
 MCP_SECRET = os.environ.get("MCP_ACCESS_TOKEN", "")
 IRIS_KEY = os.environ.get("IRIS_API_KEY", "")
