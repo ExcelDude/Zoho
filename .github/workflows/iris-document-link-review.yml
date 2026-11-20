@@ -1,0 +1,22 @@
+name: Iris WorkDrive Document Link Review Tests
+on:
+  push:
+    branches: [iris-agreement-property-link-review-v1]
+    paths:
+      - 'iris-finance/identity/document_link_review*'
+      - '.github/workflows/iris-document-link-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata-match-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check and synthetic metadata tests
+        run: |
+          node --check iris-finance/identity/document_link_review.mjs
+          node --test iris-finance/identity/document_link_review.test.mjs
