@@ -1,0 +1,19 @@
+name: Iris Rent Trust Ledger Controls
+on:
+  push:
+    branches:
+      - iris-rent-trust-ledger-controls-v1
+  pull_request:
+    paths:
+      - 'iris-finance/trust/**'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic rent trust owner and suspense control tests
+        run: node iris-finance/trust/rent_trust_ledger.test.mjs
