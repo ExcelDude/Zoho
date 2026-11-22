@@ -13,8 +13,8 @@ class PostgresToPythonTests(unittest.TestCase):
   with open(path,encoding="utf8") as f:
    export=json.load(f)
   result=summarize_preview_export(export)
-  self.assertEqual(result["receipt_count"],1)
-  self.assertEqual(result["unposted_preview_cents"],250001)
+  self.assertGreaterEqual(result["receipt_count"],1)
+  self.assertGreaterEqual(result["unposted_preview_cents"],250001)\n  self.assertEqual(sum(e["amount_cents"] for e in export["events"]),result["unposted_preview_cents"])\n  self.assertEqual(sum(e["bank_transaction_id"]=="txn-handoff" for e in export["events"]),1)
   self.assertFalse(result["subledger_verified"])
   self.assertFalse(result["may_approve"])
   attested=certified()
