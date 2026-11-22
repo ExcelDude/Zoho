@@ -18,7 +18,7 @@ export class RentArrearsPreviewStore {
   const flags=['verified','balanceApproved','snapshotFinalized','previousReceiptIdsVerified'];
   if(!o||flags.some(k=>o[k]!==true)||!ident(o.obligationKey)||!ident(o.snapshotRef)||
     !ident(o.invoiceOrRentPlanRef)||!ident(o.leaseId)||!ident(o.tenantId)||!ident(o.propertyId)||
-    !/^\\d{4}-(0[1-9]|1[0-2])$/.test(o.period||'')||
+    !/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(o.period||'')||
     !cents(o.rentDueCents)||!cents(o.priorClearedCents)||o.priorClearedCents>o.rentDueCents||
     !cents(o.priorCreditsCents)||o.priorCreditsCents!==0||!Array.isArray(o.previousReceiptIds)||o.previousReceiptIds.length)
     return hold('APPROVED_SNAPSHOT_OR_HISTORY_REQUIRED');
