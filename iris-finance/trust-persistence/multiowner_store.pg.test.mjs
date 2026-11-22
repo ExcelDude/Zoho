@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import pg from 'pg';
+import {readFile} from 'node:fs/promises';
+import {MultiOwnerReceiptStore} from './multiowner_store.mjs';
+if(process.env.IRIS_TEST_DB_DISPOSABLE!=='true'||!process.env.IRIS_TEST_DATABASE_URL)throw Error('DISPOSABLE_TEST_DB_REQUIRED');
+const pool=new pg.Pool({connectionString:process.env.IRIS_TEST_DATABASE_URL,max:12});
+const receipt={bankTransactionId:'bank-multi-1',booksEvidenceId:'books-multi-1',bankEvidenceId:'rbc-multi-1',leaseId:'L1',tenantId:'T1',propertyId:'P1',pool:'RENT',status:'CLEARED',bankVerified:true,booksVerified:true,bankMappingApproved:true,tenantLeaseIdentityVerified:true,ownershipApproved:true,booksBankAccountId:'rent-id',amountCents:10001,clearedAt:'2026-11-21'};
+const owners=[{ownerId:'A',propertyId:'P1',ownershipSnapshotId:'S1',basisPoints:6000,verified:true},{ownerId:'B',propertyId:'P1',ownershipSnapshotId:'S1',basisPoints:4000,verified:true}];
+const input={receipt,ownership:owners,approvedBankAccountId:'rent-id'};
+try{
+ const db=await pool.query('SELECT current_database() db');assert.equal(db.rows[0].db,'iris_trust_ephemeral_test');
+ await pool.query(await readFile(new URL('./allocation_schema.sql',import.meta.url),'utf8'));
+ const store=new MultiOwnerReceiptStore({pool,actorId:'allocation-test'});
+ const res=await Promise.all(Array.from({length:6},()=>store.ingest(input)));
+ assert(res.every(x=>x.status==='PREVIEW_STORED'));
+ assert.equal(res.filter(x=>!x.duplicate).length,1);
+ const key=res[0].eventKey;
+ const allocations=await pool.query('SELECT owner_id,allocated_cents FROM iris_trust_receipt_allocations WHERE event_key=$1 ORDER BY owner_id',[key]);
+ assert.deepEqual(allocations.rows.map(x=>[x.owner_id,Number(x.allocated_cents)]),[['A',6001],['B',4000]]);
+ const manifest=await pool.query('SELECT allocation_count FROM iris_trust_receipt_manifests WHERE event_key=$1',[key]);
+ assert.equal(manifest.rowCount,1);assert.equal(manifest.rows[0].allocation_count,2);
+ const conflict=await store.ingest({...input,receipt:{...receipt,amountCents:12000}});
+ assert.equal(conflict.status,'QUARANTINED');
+ const unchanged=await pool.query('SELECT amount_cents FROM iris_trust_event_previews WHERE event_key=$1',[key]);
+ assert.equal(Number(unchanged.rows[0].amount_cents),10001);
+ const exception=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_exception_cases WHERE event_key=$1 AND reason_code='DUPLICATE_SOURCE_CONFLICT'",[key]);
+ assert.equal(exception.rows[0].n,1);
+ // A second cleared partial receipt is independent; never double-count the first.
+ const partial=await store.ingest({...input,receipt:{...receipt,bankTransactionId:'bank-multi-2',bankEvidenceId:'rbc-multi-2',booksEvidenceId:'books-multi-2',amountCents:5000}});
+ assert.equal(partial.status,'PREVIEW_STORED');
+ const independent=await pool.query('SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id LIKE $1',['bank-multi-%']);
+ assert.equal(independent.rows[0].n,2);
+ // Reuse of exact supporting bank evidence for different receipt is not allowed.
+ await assert.rejects(()=>store.ingest({...input,receipt:{...receipt,bankTransactionId:'bank-multi-3',booksEvidenceId:'books-multi-3'}}));
+ const orphan=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id='bank-multi-3'");
+ assert.equal(orphan.rows[0].n,0);
+ const held=await store.ingest({...input,receipt:{...receipt,bankTransactionId:'bank-not-cleared',status:'PENDING'}});
+ assert.equal(held.status,'HOLD');
+ const noRow=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id='bank-not-cleared'");
+ assert.equal(noRow.rows[0].n,0);
+ await assert.rejects(()=>pool.query('UPDATE iris_trust_receipt_allocations SET allocated_cents=1 WHERE event_key=$1',[key]));
+ await assert.rejects(()=>pool.query('DELETE FROM iris_trust_receipt_manifests WHERE event_key=$1',[key]));
+ const audit=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_review_audit WHERE event_key=$1 AND action='ALLOCATIONS_PREVIEWED'",[key]);
+ assert.equal(audit.rows[0].n,1);
+ console.log('Real PostgreSQL multi-owner allocation test passed: concurrency, 60/40 cents, partial receipts, quarantine, immutable allocations and rollback; no posting');
+}finally{await pool.end()}
