@@ -2,10 +2,13 @@
  * Entire manifest + individual owner allocations commit together or not at all.
  */
 import {prepareMultiOwnerReceipt} from './multiowner_allocation.mjs';
+import {assessRentReceipt} from './rent_payment_exceptions.mjs';
 const SAFE=Object.freeze({postingAllowed:false,payoutAllowed:false,booksWriteAllowed:false,bankTransferAllowed:false});
 export class MultiOwnerReceiptStore {
  constructor({pool,actorId}){if(!pool?.connect||!actorId)throw Error('POOL_AND_ACTOR_REQUIRED');this.pool=pool;this.actorId=actorId}
  async ingest(input){
+  const settlement=assessRentReceipt({receipt:input?.receipt,obligation:input?.obligation});
+  if(settlement.status!=='ALLOCATABLE_PREVIEW')return settlement;
   const p=prepareMultiOwnerReceipt(input);
   if(p.status!=='MULTI_OWNER_PREVIEW_READY')return p;
   const db=await this.pool.connect();
