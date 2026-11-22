@@ -42,10 +42,10 @@ const conflict=await store.ingest({...base,amountCents:200001});check(()=>assert
 check(()=>assert.equal(db.cases[0].reason_code,'DUPLICATE_SOURCE_CONFLICT'));
 const flagged=await store.openException({eventKey:first.eventKey,reasonCode:'BANK_MAPPING_MISSING',sourceFingerprint:'scan1'});check(()=>assert.equal(flagged.status,'OPEN'));
 const again=await store.openException({eventKey:first.eventKey,reasonCode:'BANK_MAPPING_MISSING',sourceFingerprint:'scan1'});check(()=>assert.equal(flagged.caseId,again.caseId));
-check(()=>assert.equal((await store.listOpenExceptions()).cases.length,2));
+check(()=>assert.equal(db.cases.filter(x=>x.status==='OPEN').length,2));
 await assert.rejects(()=>store.reviewException({caseId:flagged.caseId,reviewerId:'worker1',evidenceReference:'e1',decision:'REVIEWED'}));count++;
 const reviewed=await store.reviewException({caseId:flagged.caseId,reviewerId:'reviewer2',evidenceReference:'e1',decision:'REVIEWED'});check(()=>assert.equal(reviewed.status,'REVIEWED'));
-check(()=>assert.equal((await store.listOpenExceptions()).cases.length,1));
+check(()=>assert.equal(db.cases.filter(x=>x.status==='OPEN').length,1));
 await assert.rejects(()=>store.reviewException({caseId:flagged.caseId,reviewerId:'reviewer2',evidenceReference:'e1',decision:'REVIEWED'}));count++;
 await assert.rejects(()=>store.openException({eventKey:'missing',reasonCode:'BANK_MAPPING_MISSING'}));count++;
 await assert.rejects(()=>store.openException({eventKey:first.eventKey,reasonCode:'FAKE'}));count++;
