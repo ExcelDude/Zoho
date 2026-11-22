@@ -1,0 +1,21 @@
+name: Iris Trust Reconciliation V2 Tests
+on:
+  push:
+    branches:
+      - iris-trust-reconciliation-engine-v2
+  pull_request:
+    paths:
+      - 'iris-finance/trust_reconciliation_v2/**'
+  workflow_dispatch:
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run synthetic fail-closed reconciliation and Books adapter tests
+        run: |
+          cd iris-finance/trust_reconciliation_v2
+          python -m unittest discover -v
