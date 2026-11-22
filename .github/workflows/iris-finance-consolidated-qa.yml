@@ -60,9 +60,20 @@ jobs:
           node iris-finance/trust-persistence/fee_statement_readiness.test.mjs
       - name: Persistent transaction and exception controls (mock)
         run: node iris-finance/trust-persistence/trust_event_store.test.mjs
+      - name: Setup Python for cross-language reconciliation handoff
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: PostgreSQL actual transactions, constraints and concurrency
         run: |
           node iris-finance/trust-persistence/trust_event_store.pg.test.mjs
           node iris-finance/trust-persistence/multiowner_store.pg.test.mjs
           node iris-finance/trust-persistence/rent_arrears_store.pg.test.mjs
           node iris-finance/trust-persistence/finance_source_bridge.pg.test.mjs
+      - name: Export unposted preview evidence from disposable PostgreSQL
+        env:
+          IRIS_TEST_EXPORT_PATH: ${{ runner.temp }}/iris-preview-evidence.json
+        run: |
+          node iris-finance/trust-persistence/reconciliation_preview_export.pg.test.mjs
+          cd iris-finance/trust_reconciliation_v2
+          python -m unittest test_postgres_handoff.py -v
