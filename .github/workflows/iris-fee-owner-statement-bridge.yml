@@ -36,6 +36,8 @@ jobs:
         run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
       - name: Signed owner fee and internal statement preview
         run: node iris-finance/trust-persistence/owner_fee_statement_bridge.test.mjs
+      - name: Books fee and statement approval readiness gate
+        run: node iris-finance/trust-persistence/fee_statement_readiness.test.mjs
       - name: Previous rent exception rules
         run: node iris-finance/trust-persistence/rent_payment_exceptions.test.mjs
       - name: Previous multiowner calculation
