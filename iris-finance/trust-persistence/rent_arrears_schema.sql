@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS iris_rent_obligation_previews (
  obligation_key TEXT PRIMARY KEY,
  organization_id TEXT NOT NULL CHECK (organization_id='110003520057'),
  lease_id TEXT NOT NULL,tenant_id TEXT NOT NULL,property_id TEXT NOT NULL,
- accounting_period TEXT NOT NULL CHECK (accounting_period ~ '^\\d{4}-(0[1-9]|1[0-2])$'),
+ accounting_period TEXT NOT NULL CHECK (accounting_period ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
  snapshot_ref TEXT NOT NULL, invoice_or_plan_ref TEXT NOT NULL,
  rent_due_cents BIGINT NOT NULL CHECK (rent_due_cents>=0),
  prior_cleared_cents BIGINT NOT NULL CHECK(prior_cleared_cents>=0 AND prior_cleared_cents<=rent_due_cents),
