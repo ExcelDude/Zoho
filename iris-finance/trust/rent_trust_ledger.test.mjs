@@ -26,7 +26,7 @@ assert.equal(run([unident,release]).status,'HOLD');
 assert.equal(run([e('wrong','RENT_RECEIPT',100,[allocation('A',100)])].map(x=>({...x,bankAccountId:'DEPOSIT-BANK'}))).status,'HOLD');
 assert.equal(run([e('a','RENT_RECEIPT',100,[allocation('A',100)]),{...e('b','RENT_RECEIPT',100,[allocation('A',100)]),bankEvidenceId:'BANK-a'}]).status,'HOLD');
 assert.equal(run([], {controls:{...controls,booksGLReconciled:false}}).status,'HOLD');
-assert.equal(run([], {opening:[]}).status,'READ_ONLY_PREVIEW'); // empty portfolio is possible only with explicit approved opening controls
+assert.equal(run([], {opening:[]}).status,'HOLD'); // missing opening balances never imply zero
 assert.equal(run([e('future','RENT_RECEIPT',100,[allocation('A',100)])].map(x=>({...x,eventDate:'2027-01-01'}))).status,'HOLD');
 assert.equal(run([e('badrev','REVERSAL',100,[allocation('A',100)])]).status,'HOLD');
 const q=buildRentTrustExceptionQueue(run([expense]));assert.equal(q.autoRetryAllowed,false);assert.equal(q.exceptions.length,1);
