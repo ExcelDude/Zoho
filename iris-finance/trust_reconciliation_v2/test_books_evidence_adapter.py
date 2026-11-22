@@ -21,7 +21,7 @@ class FakeClient:
     def list_accounts(self): return self.accounts
     def get_account(self,aid): return next(a for a in self.accounts if a["account_id"]==aid)
 def mapping():
-    return ApprovedMapping(Pool.RENT,BANK,"RBC masked reference","2110" if False else {"2110":L1,"2115":L2},"Finance Reviewer","2026-11-21")
+    return ApprovedMapping(Pool.RENT,BANK,"RBC masked reference",{"2110":L1,"2115":L2},"Finance Reviewer","2026-11-21")
 def export():
     return DatedBooksExport(D,{"BANK":"12300.00","2110":"11600.00","2115":"700.00"},
                             {"BANK":BANK,"2110":L1,"2115":L2},
