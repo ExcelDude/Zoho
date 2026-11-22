@@ -92,12 +92,13 @@ export class RentArrearsPreviewStore {
   return this.tx(db=>openCaseTx(db,args,this.actorId));
  }
  async reviewException({caseId,reviewerId,evidenceReference,decision}={}){
-  if(!Number.isSafeInteger(caseId)||!ident(reviewerId)||!ident(evidenceReference)||reviewerId===this.actorId||
+  const parsedCaseId=typeof caseId==='string'&&/^[0-9]+$/.test(caseId)?Number(caseId):caseId;
+  if(!Number.isSafeInteger(parsedCaseId)||!ident(reviewerId)||!ident(evidenceReference)||reviewerId===this.actorId||
     !['REVIEWED','CLOSED_NO_ACTION'].includes(decision))throw Error('SEPARATE_REVIEW_AND_EVIDENCE_REQUIRED');
   return this.tx(async db=>{
    const r=await db.query(`UPDATE iris_rent_payment_exception_cases
      SET status=$2,reviewed_by=$3,reviewed_at=now()
-     WHERE case_id=$1 AND status='OPEN' RETURNING case_id`,[caseId,decision,reviewerId]);
+     WHERE case_id=$1 AND status='OPEN' RETURNING case_id`,[parsedCaseId,decision,reviewerId]);
    if(r.rowCount!==1)throw Error('CASE_NOT_OPEN');
    await db.query(`INSERT INTO iris_rent_payment_exception_audit(case_id,action,actor_id)
      VALUES($1,$2,$3)`,[caseId,decision,reviewerId]);
