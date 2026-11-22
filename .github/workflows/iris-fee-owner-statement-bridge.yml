@@ -1,0 +1,50 @@
+name: Iris Fee and Owner Statement Bridge
+on:
+  push:
+    branches:
+      - iris-fee-owner-statement-bridge-v1
+  pull_request:
+    paths:
+      - 'iris-finance/trust-persistence/**'
+      - '.github/workflows/iris-fee-owner-statement-bridge.yml'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: iris_trust_ephemeral_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-ephemeral-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iris_trust_ephemeral_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      IRIS_TEST_DB_DISPOSABLE: 'true'
+      IRIS_TEST_DATABASE_URL: postgresql://postgres:test-only-ephemeral-password@localhost:5432/iris_trust_ephemeral_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install PostgreSQL driver for CI
+        run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
+      - name: Signed owner fee and internal statement preview
+        run: node iris-finance/trust-persistence/owner_fee_statement_bridge.test.mjs
+      - name: Books fee and statement approval readiness gate
+        run: node iris-finance/trust-persistence/fee_statement_readiness.test.mjs
+      - name: Previous rent exception rules
+        run: node iris-finance/trust-persistence/rent_payment_exceptions.test.mjs
+      - name: Previous multiowner calculation
+        run: node iris-finance/trust-persistence/multiowner_allocation.test.mjs
+      - name: PostgreSQL trust event baseline
+        run: node iris-finance/trust-persistence/trust_event_store.pg.test.mjs
+      - name: PostgreSQL owner allocation regression
+        run: node iris-finance/trust-persistence/multiowner_store.pg.test.mjs
+      - name: PostgreSQL rent arrears exception regression
+        run: node iris-finance/trust-persistence/rent_arrears_store.pg.test.mjs

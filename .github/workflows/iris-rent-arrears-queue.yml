@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - iris-rent-arrears-queue-v1
+      - iris-fee-owner-statement-bridge-v1
   pull_request:
     paths:
       - 'iris-finance/trust-persistence/**'
@@ -34,6 +35,8 @@ jobs:
           node-version: '22'
       - name: Install test PostgreSQL driver
         run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
+      - name: Signed owner fee and internal statement preview checks
+        run: node iris-finance/trust-persistence/owner_fee_statement_bridge.test.mjs
       - name: Existing rent exception rules
         run: node iris-finance/trust-persistence/rent_payment_exceptions.test.mjs
       - name: Existing multi-owner split rules
