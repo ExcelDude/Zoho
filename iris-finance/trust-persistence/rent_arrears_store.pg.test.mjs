@@ -51,6 +51,8 @@ try{
  await assert.rejects(()=>store.reviewException({caseId:ex.caseId,reviewerId:'test-worker',evidenceReference:'yes',decision:'REVIEWED'}));
  const done=await store.reviewException({caseId:ex.caseId,reviewerId:'finance-reviewer',evidenceReference:'yes',decision:'REVIEWED'});
  assert.equal(done.status,'REVIEWED');assert.equal(done.postingAllowed,false);
+ const signed=await pool.query('SELECT review_evidence_reference FROM iris_rent_payment_exception_cases WHERE case_id=$1',[ex.caseId]);
+ assert.equal(signed.rows[0].review_evidence_reference,'yes');
  await assert.rejects(()=>store.reviewException({caseId:ex.caseId,reviewerId:'finance-reviewer',evidenceReference:'yes',decision:'REVIEWED'}));
  const history=await pool.query("SELECT COUNT(*)::int n FROM iris_rent_payment_exception_audit WHERE case_id=$1",[ex.caseId]);
  assert.equal(history.rows[0].n,3);
