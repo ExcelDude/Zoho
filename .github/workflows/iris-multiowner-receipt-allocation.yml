@@ -37,6 +37,8 @@ jobs:
         run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
       - name: Test multi-owner allocation math and guardrails
         run: node iris-finance/trust-persistence/multiowner_allocation.test.mjs
+      - name: Test validated finance source multi-owner routing
+        run: node iris-finance/trust-persistence/multiowner_finance_bridge.test.mjs
       - name: Validate baseline PostgreSQL schema and concurrency
         run: node iris-finance/trust-persistence/trust_event_store.pg.test.mjs
       - name: Test multi-owner receipt persistence in PostgreSQL
