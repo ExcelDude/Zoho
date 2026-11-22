@@ -1,0 +1,46 @@
+name: Iris Rent Arrears and Payment Exception Queue
+on:
+  push:
+    branches:
+      - iris-rent-arrears-queue-v1
+  pull_request:
+    paths:
+      - 'iris-finance/trust-persistence/**'
+      - '.github/workflows/iris-rent-arrears-queue.yml'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: iris_trust_ephemeral_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-ephemeral-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iris_trust_ephemeral_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      IRIS_TEST_DB_DISPOSABLE: 'true'
+      IRIS_TEST_DATABASE_URL: postgresql://postgres:test-only-ephemeral-password@localhost:5432/iris_trust_ephemeral_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test PostgreSQL driver
+        run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
+      - name: Existing rent exception rules
+        run: node iris-finance/trust-persistence/rent_payment_exceptions.test.mjs
+      - name: Existing multi-owner split rules
+        run: node iris-finance/trust-persistence/multiowner_allocation.test.mjs
+      - name: Base PostgreSQL migration and security
+        run: node iris-finance/trust-persistence/trust_event_store.pg.test.mjs
+      - name: Multi-owner PostgreSQL regression
+        run: node iris-finance/trust-persistence/multiowner_store.pg.test.mjs
+      - name: New atomic arrears and stand-alone exception queue
+        run: node iris-finance/trust-persistence/rent_arrears_store.pg.test.mjs
