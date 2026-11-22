@@ -35,7 +35,7 @@ export function routeFinanceEvent({source,controls={},receipt=null,identity=null
  if(reasons.length)return hold(reasons,e.eventKey);
  // This trust row is still PREVIEW metadata; it cannot be booked as an actual receipt.
  const raw={organizationId:e.organizationId,pool:'RENT',eventType:'RENT_RECEIPT',
-  sourceSystem:'BOOKS_BANK',sourceId:receipt.sourceTransactionId,sourceVersion:e.sourceVersion,
+  sourceSystem:'BOOKS_BANK',sourceId:receipt.sourceTransactionId,sourceVersion:'1',
   eventDate:receipt.clearedAt,amountCents:receipt.amountCents,
   principalId:identity.ownerId,propertyId:identity.propertyId};
  try{
