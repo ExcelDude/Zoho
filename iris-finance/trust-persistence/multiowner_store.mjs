@@ -42,9 +42,8 @@ export class MultiOwnerReceiptStore {
       VALUES($1,$2,$3,$4,$5,$6)`,
       [event.eventKey,a.ownerId,a.propertyId,a.ownershipSnapshotId,a.basisPoints,a.amountCents]);
     }
-    await db.query(`INSERT INTO iris_trust_review_audit(event_key,action,actor_id,details)
-      VALUES($1,'ALLOCATIONS_PREVIEWED',$2,$3::jsonb)`,
-      [event.eventKey,this.actorId,JSON.stringify({fingerprint:p.allocationFingerprint,count:p.allocations.length})]);
+    await db.query(`INSERT INTO iris_trust_review_audit(event_key,action,actor_id)
+      VALUES($1,'ALLOCATIONS_PREVIEWED',$2)`,[event.eventKey,this.actorId]);
    }else{
     const manifest=await db.query('SELECT allocation_fingerprint,allocation_count FROM iris_trust_receipt_manifests WHERE event_key=$1',[event.eventKey]);
     if(manifest.rowCount!==1||manifest.rows[0].allocation_fingerprint!==p.allocationFingerprint||
