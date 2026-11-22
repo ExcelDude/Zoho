@@ -13,7 +13,7 @@ export function prepareMultiOwnerReceipt({receipt,ownership,approvedBankAccountI
  if(!receipt||!id(receipt.bankTransactionId)||!id(receipt.booksEvidenceId)||!id(receipt.bankEvidenceId)||
  !id(receipt.leaseId)||!id(receipt.tenantId)||!id(receipt.propertyId))errors.push('RECEIPT_SOURCE_EVIDENCE_MISSING');
  if(!Number.isSafeInteger(receipt?.amountCents)||receipt.amountCents<=0)errors.push('INVALID_RECEIPT_CENTS');
- if(typeof receipt?.clearedAt!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(receipt.clearedAt)||Number.isNaN(Date.parse(receipt.clearedAt))||new Date(receipt.clearedAt+'T00:00:00Z').toISOString().slice(0,10)!==receipt.clearedAt)errors.push('INVALID_CLEARED_DATE');
+ if(typeof receipt?.clearedAt!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(receipt.clearedAt)||Number.isNaN(Date.parse(receipt.clearedAt))||new Date(receipt.clearedAt+'T00:00:00Z').toISOString().slice(0,10)!==receipt.clearedAt)errors.push('INVALID_CLEARED_DATE');
  if(receipt?.status!=='CLEARED'||receipt?.bankVerified!==true||receipt?.booksVerified!==true||
  receipt?.tenantLeaseIdentityVerified!==true)errors.push('UNVERIFIED_SETTLED_RECEIPT');
  if(!approvedBankAccountId||receipt?.booksBankAccountId!==approvedBankAccountId||receipt?.bankMappingApproved!==true||receipt?.pool!=='RENT')
