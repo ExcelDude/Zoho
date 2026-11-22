@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - iris-finance-consolidated-qa-v1
+      - iris-deposit-reconciliation-handoff-v1
   pull_request:
     paths:
       - 'iris-finance/**'
@@ -77,3 +78,10 @@ jobs:
           node iris-finance/trust-persistence/reconciliation_preview_export.pg.test.mjs
           cd iris-finance/trust_reconciliation_v2
           python -m unittest test_postgres_handoff.py -v
+      - name: Export Deposit Trust previews and verify combined pool controls
+        env:
+          IRIS_TEST_DEPOSIT_EXPORT_PATH: ${{ runner.temp }}/iris-deposit-preview.json
+        run: |
+          node iris-finance/trust-persistence/deposit_preview_export.pg.test.mjs
+          cd iris-finance/trust_reconciliation_v2
+          python -m unittest test_deposit_handoff.py -v
