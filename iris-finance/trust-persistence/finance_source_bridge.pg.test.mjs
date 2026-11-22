@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import pg from 'pg';
+import {TrustEventStore} from './trust_event_store.mjs';
+import {persistFinanceReceiptPreview} from './finance_source_bridge.mjs';
+if(process.env.IRIS_TEST_DB_DISPOSABLE!=='true'||!process.env.IRIS_TEST_DATABASE_URL)throw Error('DISPOSABLE_DATABASE_REQUIRED');
+const pool=new pg.Pool({connectionString:process.env.IRIS_TEST_DATABASE_URL,max:8});
+const source={type:'RENT_PAYMENT_SETTLED',sourceSystem:'iris',sourceId:'lease-bridge',sourceVersion:'v1',organizationId:'110003520057',occurredAt:'2026-11-21T09:00:00Z',payload:{tenantId:'tenant-bridge',propertyId:'property-bridge'}};
+const controls={sourceDataVerified:true,ownerOrTenantIdentityVerified:true,periodEligible:true,reviewedApproval:true,sourceSnapshotComplete:true,booksBankEvidenceVerified:true};
+const receipt={sourceTransactionId:'bank-txn-bridge',bankEvidenceId:'RBC-bridge',booksEvidenceId:'BOOKS-bridge',booksBankAccountId:'mapped-test',pool:'RENT',bankMappingApproved:true,status:'CLEARED',clearedAt:'2026-11-21',amountCents:250000,tenantId:'tenant-bridge',leaseId:'lease-bridge',propertyId:'property-bridge',transactionVerified:true,independentReadbackVerified:true};
+const identity={independentlyVerified:true,ownerId:'owner-bridge',tenantId:'tenant-bridge',leaseId:'lease-bridge',propertyId:'property-bridge',ownershipSnapshotId:'snapshot-bridge',ownershipPercent:100};
+const input={source,controls,receipt,identity};
+try{
+ const info=await pool.query('SELECT current_database() db');
+ assert.equal(info.rows[0].db,'iris_trust_ephemeral_test');
+ const store=new TrustEventStore({pool,actorId:'bridge-worker'});
+ const results=await Promise.all(Array.from({length:5},()=>persistFinanceReceiptPreview({routerInput:input,trustStore:store})));
+ assert.equal(results.filter(r=>!r.duplicate).length,1);
+ assert(results.every(r=>r.status==='PREVIEW_STORED'));
+ const key=results[0].trustEventKey;
+ const stored=await pool.query('SELECT source_id,amount_cents,principal_id FROM iris_trust_event_previews WHERE event_key=$1',[key]);
+ assert.equal(stored.rowCount,1);assert.equal(stored.rows[0].source_id,'bank-txn-bridge');
+ assert.equal(String(stored.rows[0].amount_cents),'250000');
+ const changed=await persistFinanceReceiptPreview({routerInput:{...input,source:{...source,sourceVersion:'v2'},receipt:{...receipt,amountCents:260000}},trustStore:store});
+ assert.equal(changed.status,'QUARANTINED');
+ const unchanged=await pool.query('SELECT amount_cents FROM iris_trust_event_previews WHERE event_key=$1',[key]);
+ assert.equal(String(unchanged.rows[0].amount_cents),'250000');
+ const issues=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_exception_cases WHERE event_key=$1 AND reason_code='DUPLICATE_SOURCE_CONFLICT'",[key]);
+ assert.equal(issues.rows[0].n,1);
+ const bad=await persistFinanceReceiptPreview({routerInput:{...input,receipt:{...receipt,sourceTransactionId:'unverified-bridge',status:'PENDING'}},trustStore:store});
+ assert.equal(bad.status,'HOLD');
+ const missing=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id='unverified-bridge'");
+ assert.equal(missing.rows[0].n,0);
+ const history=await pool.query('SELECT action FROM iris_trust_review_audit WHERE event_key=$1',[key]);
+ assert(history.rows.some(x=>x.action==='INGEST'));assert(history.rows.some(x=>x.action==='SOURCE_CONFLICT'));
+ console.log('Verified Iris-to-trust bridge on disposable PostgreSQL: 5 concurrent submissions, 1 immutable row, conflict quarantine, HOLD not stored, no financial writes');
+}finally{await pool.end()}
