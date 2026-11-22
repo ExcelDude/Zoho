@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS iris_rent_payment_exception_cases (
  source_fingerprint CHAR(64) NOT NULL,
  evidence_reference TEXT NOT NULL,
  status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN('OPEN','REVIEWED','CLOSED_NO_ACTION')),
- reviewed_by TEXT,reviewed_at TIMESTAMPTZ,
+ reviewed_by TEXT,review_evidence_reference TEXT,reviewed_at TIMESTAMPTZ,
  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
  UNIQUE(bank_transaction_id,reason_code,source_fingerprint),
- CHECK ((status='OPEN' AND reviewed_by IS NULL AND reviewed_at IS NULL) OR
-        (status<>'OPEN' AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL))
+ CHECK ((status='OPEN' AND reviewed_by IS NULL AND review_evidence_reference IS NULL AND reviewed_at IS NULL) OR
+        (status<>'OPEN' AND reviewed_by IS NOT NULL AND review_evidence_reference IS NOT NULL AND reviewed_at IS NOT NULL))
 );
 CREATE TABLE IF NOT EXISTS iris_rent_payment_exception_audit (
  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
