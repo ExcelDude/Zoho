@@ -40,7 +40,7 @@ export function prepareFeeInvoiceReadiness({feePreview,ownerId,ownerMappings,own
  if(issues.length)return fail(issues);
  const draft=makeDraft({kind:'MANAGEMENT_FEE',
   agreement:{signed:true,agreement_id:owner.agreementId,version:owner.agreementVersion,
-    effective_start:feePreview.clearedAt,type:owner.agreementType,verifiedFeeTerms:owner.agreementType==='LEGACY'},
+    effective_start:owner.agreementEffectiveFrom,type:owner.agreementType,verifiedFeeTerms:owner.agreementType==='LEGACY'},
   ownerBooksCustomerId:mapping.books_contact_id,sourceEventId:feePreview.receiptKey+'|'+owner.ownerId,
   propertyId:owner.propertyId,baseFeeCents:owner.managementFeeQuoteCents,
   feeGstCents:owner.feeGstQuoteCents,reviewApproved:true});
