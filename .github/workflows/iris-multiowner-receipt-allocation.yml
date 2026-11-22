@@ -1,0 +1,43 @@
+name: Iris Multiowner Receipt Allocation
+on:
+  push:
+    branches:
+      - iris-multiowner-receipt-allocation-v1
+  pull_request:
+    paths:
+      - 'iris-finance/trust-persistence/**'
+      - '.github/workflows/iris-multiowner-receipt-allocation.yml'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: iris_trust_ephemeral_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-ephemeral-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iris_trust_ephemeral_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      IRIS_TEST_DB_DISPOSABLE: 'true'
+      IRIS_TEST_DATABASE_URL: postgresql://postgres:test-only-ephemeral-password@localhost:5432/iris_trust_ephemeral_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned PostgreSQL driver
+        run: npm install --no-save --ignore-scripts --no-package-lock pg@8.13.1
+      - name: Test multi-owner allocation math and guardrails
+        run: node iris-finance/trust-persistence/multiowner_allocation.test.mjs
+      - name: Validate baseline PostgreSQL schema and concurrency
+        run: node iris-finance/trust-persistence/trust_event_store.pg.test.mjs
+      - name: Test multi-owner receipt persistence in PostgreSQL
+        run: node iris-finance/trust-persistence/multiowner_store.pg.test.mjs
