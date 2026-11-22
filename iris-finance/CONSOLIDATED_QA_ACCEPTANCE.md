@@ -30,3 +30,12 @@ The branch inherits the cumulative code line from `iris-fee-owner-statement-brid
 GitHub Actions `Iris Consolidated Finance QA (NO POSTING)` runs isolated Python reconciliation tests and Node/PostgreSQL tests. Evidence is valid only for the exact commit and completed passing job outcomes.
 
 This code is not a replacement for signed legal/accounting validation and does not modify real Books balances, send statements, create invoices or permit trust transfers.
+
+## Verified consolidated CI execution
+- Branch commit tested: `8322194e856c0f23d7a273daf263a9e5a2722297`
+- GitHub Actions run: https://github.com/ExcelDude/Zoho/actions/runs/44993133624
+- **reconciliation** job: SUCCESS. Synthetic Python reconciliation and GET-only Books evidence adapter test discovery executed.
+- **finance-integration** job: SUCCESS. Node safety, fee/statement review, mock persistence and disposable PostgreSQL integration/concurrency commands executed.
+- The combined pass proves both code stacks execute in one branch and workflow. It does not constitute a real cross-language data-adapter integration, a true RBC/Books/owner-ledger reconciliation or approval to deploy.
+
+Draft pull request: https://github.com/ExcelDude/Zoho/pull/9 (targets the cumulative development branch, never production/main).
