@@ -57,7 +57,7 @@ export function previewOwnerFeeStatements({receipt,ownership,agreements,approved
    if(after<0){issues.push('NEGATIVE_INDICATIVE_OWNER_AMOUNT_'+allocationRow.ownerId);continue}
    rows.push({ownerId:allocationRow.ownerId,propertyId:receipt.propertyId,
      ownershipSnapshotId:allocationRow.ownershipSnapshotId,agreementId:a.agreementId,
-     agreementVersion:a.version,agreementType:a.type,receiptKey:allocation.trust.eventKey,
+     agreementVersion:a.version,agreementType:a.type,agreementEffectiveFrom:a.effectiveFrom,receiptKey:allocation.trust.eventKey,
      collectedReceiptShareCents:allocationRow.amountCents,
      managementRateBps:bps,managementFeeQuoteCents:fee,feeGstQuoteCents:gst,
      nonresidentWithholdingQuoteCents:withholding,
