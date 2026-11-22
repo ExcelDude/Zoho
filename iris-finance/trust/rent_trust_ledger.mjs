@@ -18,6 +18,7 @@ export function previewRentTrustLedger({cutoff,opening=[],events=[],controls={}}
    if(controls[k]!==true) issues.push('CONTROL_'+k.toUpperCase()+'_REQUIRED');
  if(!validCent(controls.openingSuspenseCents))issues.push('UNVERIFIED_SUSPENSE_OPENING');
  else suspenseCents=controls.openingSuspenseCents;
+ if(opening.length===0)issues.push('OPENING_BALANCES_MISSING');
  for(const o of opening){
   if(!o?.ownerId||!o?.propertyId||!o?.ownershipSnapshotId||!validCent(o.amountCents)){issues.push('INVALID_OPENING');continue}
   const key=o.ownerId+'|'+o.propertyId+'|'+o.ownershipSnapshotId;
@@ -26,7 +27,7 @@ export function previewRentTrustLedger({cutoff,opening=[],events=[],controls={}}
   balance.set(key,o.amountCents);
  }
  // Do not manufacture balances from events on an invalid or missing opening set.
- const ordered=[...events].sort((a,b)=>String(a.eventDate||'').localeCompare(String(b.eventDate||''))||String(a.eventId||'').localeCompare(String(b.eventId||'')));
+ const ordered=events.map((event,index)=>({event,index})).sort((a,b)=>String(a.event.eventDate||'').localeCompare(String(b.event.eventDate||''))||a.index-b.index).map(x=>x.event);
  for(const e of ordered){
   if(!e?.eventId||eventIds.has(e.eventId)){issues.push('DUPLICATE_OR_MISSING_EVENT_ID');continue}
   eventIds.add(e.eventId);
