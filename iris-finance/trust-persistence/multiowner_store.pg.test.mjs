@@ -6,7 +6,8 @@ if(process.env.IRIS_TEST_DB_DISPOSABLE!=='true'||!process.env.IRIS_TEST_DATABASE
 const pool=new pg.Pool({connectionString:process.env.IRIS_TEST_DATABASE_URL,max:12});
 const receipt={bankTransactionId:'bank-multi-1',booksEvidenceId:'books-multi-1',bankEvidenceId:'rbc-multi-1',leaseId:'L1',tenantId:'T1',propertyId:'P1',pool:'RENT',status:'CLEARED',bankVerified:true,booksVerified:true,bankMappingApproved:true,tenantLeaseIdentityVerified:true,ownershipApproved:true,booksBankAccountId:'rent-id',amountCents:10001,clearedAt:'2026-11-21'};
 const owners=[{ownerId:'A',propertyId:'P1',ownershipSnapshotId:'S1',basisPoints:6000,verified:true},{ownerId:'B',propertyId:'P1',ownershipSnapshotId:'S1',basisPoints:4000,verified:true}];
-const input={receipt,ownership:owners,approvedBankAccountId:'rent-id'};
+const obligation={verified:true,balanceApproved:true,invoiceOrRentPlanRef:'jan-rent-1',period:'2027-01',snapshotRef:'statement-1',rentDueCents:50000,priorClearedCents:0,priorCreditsCents:0,leaseId:'L1',tenantId:'T1',propertyId:'P1',previousReceiptIdsVerified:true,previousReceiptIds:[],snapshotFinalized:true};
+const input={receipt,ownership:owners,approvedBankAccountId:'rent-id',obligation};
 try{
  const db=await pool.query('SELECT current_database() db');assert.equal(db.rows[0].db,'iris_trust_ephemeral_test');
  await pool.query(await readFile(new URL('./allocation_schema.sql',import.meta.url),'utf8'));
@@ -38,6 +39,10 @@ try{
  assert.equal(held.status,'HOLD');
  const noRow=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id='bank-not-cleared'");
  assert.equal(noRow.rows[0].n,0);
+ const excess=await store.ingest({...input,receipt:{...receipt,bankTransactionId:'bank-overpay',bankEvidenceId:'rbc-over',booksEvidenceId:'books-over',amountCents:60000}});
+ assert.equal(excess.status,'HOLD');assert.equal(excess.category,'OVERPAYMENT');
+ const noOver=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_event_previews WHERE source_id='bank-overpay'");assert.equal(noOver.rows[0].n,0);
+ const missingBalance=await store.ingest({...input,receipt:{...receipt,bankTransactionId:'no-balance'},obligation:null});assert.equal(missingBalance.status,'HOLD');
  await assert.rejects(()=>pool.query('UPDATE iris_trust_receipt_allocations SET allocated_cents=1 WHERE event_key=$1',[key]));
  await assert.rejects(()=>pool.query('DELETE FROM iris_trust_receipt_manifests WHERE event_key=$1',[key]));
  const audit=await pool.query("SELECT COUNT(*)::int n FROM iris_trust_review_audit WHERE event_key=$1 AND action='ALLOCATIONS_PREVIEWED'",[key]);
