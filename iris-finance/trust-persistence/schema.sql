@@ -31,3 +31,11 @@ DROP TRIGGER IF EXISTS iris_trust_audit_no_mutation ON iris_trust_review_audit;
 CREATE TRIGGER iris_trust_audit_no_mutation BEFORE UPDATE OR DELETE ON iris_trust_review_audit FOR EACH ROW EXECUTE FUNCTION iris_trust_preview_immutable();
 -- SECURITY: revoke all access from anon/authenticated/browser; service roles only.
 -- Service can INSERT/SELECT previews, INSERT audit, limited review updates; no financial posting.
+
+-- Defense-in-depth: anonymous/browser roles must not access trust preview data.
+REVOKE ALL ON iris_trust_event_previews, iris_trust_exception_cases, iris_trust_review_audit FROM PUBLIC;
+REVOKE ALL ON SEQUENCE iris_trust_exception_cases_case_id_seq, iris_trust_review_audit_id_seq FROM PUBLIC;
+ALTER TABLE iris_trust_event_previews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iris_trust_exception_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iris_trust_review_audit ENABLE ROW LEVEL SECURITY;
+-- No RLS policies. A restricted service role needs separately approved grants/policies.
