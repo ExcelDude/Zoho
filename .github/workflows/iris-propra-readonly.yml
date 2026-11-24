@@ -1,0 +1,25 @@
+name: Iris Propra Read-only Transport (Synthetic)
+on:
+  push:
+    branches:
+      - iris-propra-readonly-client-v1
+  pull_request:
+    paths:
+      - 'iris-finance/propra/**'
+      - '.github/workflows/iris-propra-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate read-only Propra transport without network or credentials
+        run: |
+          node iris-finance/propra/propra_readonly_client.test.mjs
+          node iris-finance/propra/probe.test.mjs
+          node iris-finance/propra/documented_client.test.mjs
