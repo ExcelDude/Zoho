@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {PropraDocumentedReadClient,PROPRA_DOCUMENTED_BASE} from './documented_client.mjs';
+const seen=[];
+const client=new PropraDocumentedReadClient({key:'pn_SYNTHETIC',secret:'pz_SYNTHETIC',transport:async(url,opt)=>{
+ seen.push({url,method:opt.method,redirect:opt.redirect,apiKey:opt.headers['X-API-Key'],secret:opt.headers.Authorization});
+ return {ok:true,headers:{get:()=> 'application/json'},json:async()=>url.endsWith('/account')?{id:'synthetic'}:{edges:[{cursor:'c1',node:{id:'unit-synthetic'}}],pageInfo:{hasNextPage:false,endCursor:'c1'},totalCount:1}};
+}});
+assert.equal(PROPRA_DOCUMENTED_BASE,'https://propra.app/api/v1');
+assert.equal((await client.get('/account')).id,'synthetic');
+const page=await client.listPage('/properties',{first:1});
+assert.equal(page.count,1);assert.equal(page.items[0].id,'unit-synthetic');
+assert.equal(seen[0].url,PROPRA_DOCUMENTED_BASE+'/account');assert.equal(seen[1].url,PROPRA_DOCUMENTED_BASE+'/properties?first=1');
+assert(seen.every(x=>x.method==='GET'&&x.redirect==='error'&&x.apiKey==='pn_SYNTHETIC'&&x.secret==='pz_SYNTHETIC'));
+await assert.rejects(()=>client.get('/owners',{first:21}),/PROPRA_PAGE_LIMIT_EXCEEDED/);
+await assert.rejects(()=>client.get('/owners', {after:''}),/PROPRA_INVALID_CURSOR/);
+await assert.rejects(()=>client.get('/owners/anything'),/PROPRA_UNAPPROVED_PATH/);
+await assert.rejects(()=>client.get('/requests/1/notes'),/PROPRA_UNAPPROVED_PATH/);
+assert.throws(()=>new PropraDocumentedReadClient({key:'bad',secret:'wrong'}).auth(),/PROPRA_CREDENTIALS_MISSING/);
+const denial=new PropraDocumentedReadClient({key:'pn_SYNTHETIC',secret:'pz_SYNTHETIC',transport:async()=>({ok:false,status:403})});
+await assert.rejects(()=>denial.get('/account'),/PROPRA_READ_SCOPE_DENIED/);
+console.log('Documented Propra v1 auth and GET-only paging tests passed; no live network calls');
