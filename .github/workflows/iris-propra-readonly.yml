@@ -19,4 +19,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate read-only Propra transport without network or credentials
-        run: node iris-finance/propra/propra_readonly_client.test.mjs
+        run: |
+          node iris-finance/propra/propra_readonly_client.test.mjs
+          node iris-finance/propra/probe.test.mjs
