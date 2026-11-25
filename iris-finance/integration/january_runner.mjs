@@ -5,7 +5,7 @@ import {assessOwnershipForFinance} from '../identity/ownership_finance_gate.mjs'
 export async function runJanuaryDryRun({listRecords,store,period='2027-01',snapshotAt,controlsForCandidate,ownershipEvidenceForCandidate}){
  if(typeof controlsForCandidate!=='function')throw Error('APPROVAL_GATE_RESOLVER_REQUIRED');
  const data=await loadIrisSnapshot({listRecords});
- const analysis=buildJanuaryRentCandidates({...data,period,snapshotAt});
+ const analysis=buildJanuaryRentCandidates({leases:data.leases,properties:data.properties,ownership:data.property_ownership,period,snapshotAt});
  const engine=new IntegrationEngine({store,clock:()=>snapshotAt});
  const results=[];
  for(const c of analysis.candidates){
