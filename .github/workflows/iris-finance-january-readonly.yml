@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - iris-finance-readonly-january-simulation
+      - iris-ownership-finance-gate-v1
     paths:
       - 'iris-finance/integration/**'
+      - 'iris-finance/identity/**'
       - '.github/workflows/iris-finance-january-readonly.yml'
   workflow_dispatch:
 permissions:
@@ -19,12 +21,14 @@ jobs:
           node-version: '22'
       - name: Validate module syntax
         run: |
+          node --check iris-finance/identity/ownership_finance_gate.mjs
           node --check iris-finance/integration/engine.mjs
           node --check iris-finance/integration/iris_readonly_adapter.mjs
           node --check iris-finance/integration/january_runner.mjs
           node --check iris-finance/integration/postgres_store.mjs
       - name: Run no-write integration and January tests
         run: |
+          node --test iris-finance/identity/ownership_finance_gate.test.mjs
           node --test iris-finance/integration/engine.test.mjs
           node --test iris-finance/integration/iris_readonly_adapter.test.mjs
           node --test iris-finance/integration/january_runner.test.mjs
