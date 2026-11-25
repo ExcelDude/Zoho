@@ -22,6 +22,9 @@ assert.ok(authorizedPreview.results[0].ownershipReview.issues.includes('MISSING_
 const approvedEvidence=()=>({unitCrosswalks:[{iris_property_id:'P1',propra_property_id:'PB1',propra_unit_id:'PU1',propra_owner_id:'PO1',unit_number:'101',approval:'APPROVED',evidence_ref:'approved-unit-evidence'}],approvedOwnership:[{property_id:'P1',owner_id:'O1',basis_points:10000,approval:'APPROVED',evidence_ref:'signed-ownership'}],ownerCrosswalks:[{iris_owner_id:'O1',propra_owner_id:'PO1',approval:'APPROVED',evidence_ref:'verified-owner-id'}]});
 const reviewed=await runJanuaryDryRun({listRecords,store:new Store(),snapshotAt:'2026-11-16T09:00:00Z',controlsForCandidate:()=>allTrue,ownershipEvidenceForCandidate:approvedEvidence});
 assert.equal(reviewed.previews,1);assert.equal(reviewed.financialWrites,0);assert.equal(reviewed.results[0].ownershipReview.postingAllowed,false);
+const alteredShares=await runJanuaryDryRun({listRecords,store:new Store(),snapshotAt:'2026-11-16T09:00:00Z',controlsForCandidate:()=>allTrue,ownershipEvidenceForCandidate:()=>({...approvedEvidence(),approvedOwnership:[{...approvedEvidence().approvedOwnership[0],owner_id:'O2'}],ownerCrosswalks:[{iris_owner_id:'O2',propra_owner_id:'PO1',approval:'APPROVED',evidence_ref:'verified-owner-id'}]})});
+assert.equal(alteredShares.blocked,1);assert.equal(alteredShares.results[0].ownershipSourceMatchesApproval,false);
+assert.ok(alteredShares.exceptions.some(x=>x.reason==='APPROVED_OWNERSHIP_DIFFERS_FROM_IRIS_SOURCE'));
 const conflicting=await runJanuaryDryRun({listRecords,store:new Store(),snapshotAt:'2026-11-16T09:00:00Z',controlsForCandidate:()=>allTrue,ownershipEvidenceForCandidate:()=>({...approvedEvidence(),unitCrosswalks:[{...approvedEvidence().unitCrosswalks[0],propra_owner_id:'WRONG'}]})});
 assert.equal(conflicting.blocked,1);
 assert.ok(conflicting.results[0].ownershipReview.issues.includes('UNIT_OWNER_IDENTITY_CONFLICT'));
