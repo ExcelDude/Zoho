@@ -47,11 +47,11 @@ class TestReadOnlyMcp(unittest.TestCase):
     self.assertNotIn("SYNTHETIC_PRIVATE_DATA",str(cm.exception))
  def test_validated_paging(self):
     with self.assertRaisesRegex(ValueError,"1-20"):
-        asyncio.run(server.list_propra_records.fn("owners",first=30))
+        asyncio.run(server.list_propra_records("owners",first=30))
     with self.assertRaisesRegex(ValueError,"Resource not allowed"):
-        asyncio.run(server.list_propra_records.fn("listings"))
+        asyncio.run(server.list_propra_records("listings"))
  def test_bad_id(self):
     with self.assertRaisesRegex(ValueError,"Invalid resource"):
-        asyncio.run(server.get_propra_record.fn("owners","../../../secret"))
+        asyncio.run(server.get_propra_record("owners","../../../secret"))
 
 if __name__=="__main__":unittest.main()
