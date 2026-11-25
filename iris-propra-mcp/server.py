@@ -67,7 +67,7 @@ def safe_redirect(value):
 
 def valid_client(client):
     if not isinstance(client,str): return False
-    if re.fullmatch(r"https://chatgpt\\.com/oauth/(?:[A-Za-z0-9_-]+/)?client\\.json",client):
+    if re.fullmatch(r"https://chatgpt\.com/oauth/(?:[A-Za-z0-9_-]+/)?client\.json",client):
         return True
     if client.startswith("propra_dcr_"):
         claims=verify(client[len("propra_dcr_"):], "client")
