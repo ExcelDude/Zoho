@@ -2,7 +2,8 @@ import {parsePortalEvent,requestKey,sha256,parseBooksCallback} from './contract.
 export function makeInvoiceReference(event){return 'IRIS-TEST-'+event.lease_id+'-'+event.accounting_period}
 export function validatePilotApprovals({mapping,controls}){
  const missing=[];
- for(const k of ['sourceSnapshotVerified','tenantIdentityApproved','propertyUnitOwnerApproved','signedAgreementReviewed','billingPolicyApproved','accountantApproved','testCustomerConfirmed','testItemConfirmed'])if(controls?.[k]!==true)missing.push(k);
+ // Connectivity pilot must use a designated synthetic customer/item; real rent billing has separate ownership and legal approval gates.
+ for(const k of ['sourceSnapshotVerified','accountantApproved','testCustomerConfirmed','testItemConfirmed','syntheticTestOnlyApproved'])if(controls?.[k]!==true)missing.push(k);
  for(const k of ['books_customer_id','books_item_id','iris_lease_id','iris_property_id'])if(!mapping?.[k])missing.push(k);
  if(mapping?.books_customer_id&&!/^\d+$/.test(String(mapping.books_customer_id)))missing.push('invalidBooksCustomer');
  if(mapping?.books_item_id&&!/^\d+$/.test(String(mapping.books_item_id)))missing.push('invalidBooksItem');
@@ -18,9 +19,9 @@ export function prepareDraftInvoice({event,lease,mapping,controls}){
  return {key:requestKey(e),reference,holds,postingAllowed:false,sendAllowed:false,
   draft:holds.length?null:{customer_id:mapping.books_customer_id,reference_number:reference,
    date:e.accounting_period+'-01',due_date:e.accounting_period+'-01',
-   send:false,notes:'IRIS INTEGRATION TEST — DO NOT SEND OR PAY',
-   custom_fields:[{label:'Iris Lease ID',value:e.lease_id},{label:'Iris Property ID',value:e.property_id},{label:'Iris Finance Event ID',value:e.source_event_id}],
-   line_items:[{item_id:mapping.books_item_id,quantity:1,rate:Number(lease.rent_amount)}]}};
+   send:false,notes:'IRIS INTEGRATION TEST — $1 synthetic charge. NOT TENANT RENT OR OWNER FUNDS. DO NOT SEND OR PAY',
+   custom_fields:[{customfield_id:'242438000000032024',value:e.lease_id},{customfield_id:'242438000000031046',value:e.property_id},{customfield_id:'242438000000032026',value:e.source_event_id}],
+   line_items:[{item_id:mapping.books_item_id,quantity:1,rate:1,description:'$1 integration pilot ONLY — not tenant rent, management fee or trust receipt'}]}};
 }
 /**
  * No Books write here. Use durable reservation with UNIQUE event_key and payload digest
