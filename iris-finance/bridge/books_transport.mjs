@@ -1,7 +1,7 @@
 import {ORG_ID} from './contract.mjs';
 const HOSTS=new Set(['www.zohoapis.com','zohoapis.com','www.zohoapis.ca','zohoapis.ca']);
 function baseUrl(value){const url=new URL(value);if(url.protocol!=='https:'||!HOSTS.has(url.hostname)||url.pathname!=='/'||url.username||url.password)throw Error('UNAPPROVED_BOOKS_API_HOST');return url.origin;}
-export function makeBooksClient({apiBaseUrl,accessToken,fetchImpl}){
+export function makeBooksClient({apiBaseUrl,accessToken,fetchImpl,pilotWriteEnabled=false,approvedTestCustomerId,approvedTestItemId}){
  const base=baseUrl(apiBaseUrl);
  if(!accessToken||typeof fetchImpl!=='function')throw Error('BOOKS_AUTH_REQUIRED');
  const request=async(method,path,body)=>{
@@ -32,8 +32,9 @@ export function makeBooksClient({apiBaseUrl,accessToken,fetchImpl}){
    return {exact,searchComplete:json.page_context?.has_more_page===false,writeSafe:false};
   },
   createDraftDisabledByDefault:async({draft,writeMode,operatorApproval,verifiedNoExistingReference})=>{
-   if(writeMode!=='EXPLICIT_ONE_TIME_TEST'||operatorApproval!==true||verifiedNoExistingReference!==true)
+   if(pilotWriteEnabled!==true||writeMode!=='EXPLICIT_ONE_TIME_TEST'||operatorApproval!==true||verifiedNoExistingReference!==true)
      throw Error('BOOKS_DRAFT_WRITE_NOT_APPROVED');
+   if(!approvedTestCustomerId||!approvedTestItemId||draft?.customer_id!==approvedTestCustomerId||draft?.line_items?.length!==1||draft.line_items[0].item_id!==approvedTestItemId)throw Error('BOOKS_TEST_ALLOWLIST_REQUIRED');
    if(!draft||draft.send!==false||!String(draft.reference_number||'').startsWith('IRIS-TEST-'))
      throw Error('NOT_A_TEST_DRAFT');
    // Caller must enforce durable once-only reservation in Iris before invoking this method.
