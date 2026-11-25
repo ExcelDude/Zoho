@@ -1,0 +1,26 @@
+name: Iris Propra MCP QA (NO LIVE DATA)
+on:
+  push:
+    branches:
+      - iris-propra-mcp-render-v1
+  pull_request:
+    paths:
+      - 'iris-propra-mcp/**'
+      - '.github/workflows/iris-propra-mcp-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install MCP runtime dependencies
+        run: pip install -r iris-propra-mcp/requirements.txt
+      - name: Compile source
+        run: python -m py_compile iris-propra-mcp/server.py iris-propra-mcp/test_server.py
+      - name: Synthetic read-only tests, no network
+        run: cd iris-propra-mcp && python -m unittest -v test_server.py
