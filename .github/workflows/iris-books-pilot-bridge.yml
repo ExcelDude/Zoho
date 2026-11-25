@@ -1,0 +1,31 @@
+name: Iris Books Pilot Bridge (No Writes)
+on:
+  push:
+    branches:
+      - iris-books-pilot-bridge-v1
+    paths:
+      - 'iris-finance/bridge/**'
+      - '.github/workflows/iris-books-pilot-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pilot-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate bridge syntax
+        run: |
+          node --check iris-finance/bridge/contract.mjs
+          node --check iris-finance/bridge/bridge.mjs
+          node --check iris-finance/bridge/http_handlers.mjs
+          node --check iris-finance/bridge/bridge.test.mjs
+          node --check iris-finance/bridge/books_transport.mjs
+          node --check iris-finance/bridge/books_transport.test.mjs
+          node --check iris-finance/bridge/portal_outbox.mjs
+          node --check iris-finance/bridge/portal_outbox.test.mjs
+      - name: Run authenticated no-write bridge regression tests
+        run: node --test iris-finance/bridge/*.test.mjs
