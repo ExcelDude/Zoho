@@ -25,5 +25,7 @@ jobs:
           node --check iris-finance/bridge/bridge.test.mjs
           node --check iris-finance/bridge/books_transport.mjs
           node --check iris-finance/bridge/books_transport.test.mjs
+          node --check iris-finance/bridge/portal_outbox.mjs
+          node --check iris-finance/bridge/portal_outbox.test.mjs
       - name: Run authenticated no-write bridge regression tests
         run: node --test iris-finance/bridge/*.test.mjs
