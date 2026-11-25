@@ -28,14 +28,19 @@ export async function runJanuaryDryRun({listRecords,store,period='2027-01',snaps
   if(!controls||typeof controls!=='object')throw Error('CONTROL_RESOLUTION_FAILED');
   // Source-level exceptions are mandatory holds, even if caller claims all other approvals.
   if(c.issues.length)controls={...controls,sourceDataVerified:false};
-  if(review.status!=='IDENTITY_REVIEW_PASSED')controls={...controls,ownerOrTenantIdentityVerified:false};
+  // Evidence must correspond to the actual read-only Iris property_ownership rows.
+  const approvedShares=Array.isArray(evidence?.approvedOwnership) ? evidence.approvedOwnership : [];
+  const canonical = rows => rows.map(x=>[x.owner_id,x.basis_points]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+  const ownerSharesMatch=JSON.stringify(canonical(shares))===JSON.stringify(canonical(approvedShares));
+  if(review.status!=='IDENTITY_REVIEW_PASSED'||!ownerSharesMatch)
+    controls={...controls,ownerOrTenantIdentityVerified:false};
   // A 'verified' identity can't be inferred from an owner UUID; enforce external proof.
   if(controls.independentIdentityEvidence!==true)controls={...controls,ownerOrTenantIdentityVerified:false};
   if(controls.rentChargePolicyApproved!==true)controls={...controls,reviewedApproval:false};
   const processed=await engine.process(incoming.eventKey,{controls});
-  results.push({leaseId:c.leaseId,eventKey:incoming.eventKey,status:processed.status,sourceIssues:c.issues,ownershipReview:review,blocking:processed.projection?.blocking||[],duplicated:incoming.duplicate,financialWrite:false});
+  results.push({leaseId:c.leaseId,eventKey:incoming.eventKey,status:processed.status,sourceIssues:c.issues,ownershipReview:review,ownershipSourceMatchesApproval:ownerSharesMatch,blocking:processed.projection?.blocking||[],duplicated:incoming.duplicate,financialWrite:false});
  }
  return {period,snapshotAt,sourceCounts:analysis.sourceCounts,scheduledRentCents:analysis.summary.scheduledRentCents,rentCandidates:analysis.summary.rentCandidates,
   blocked:results.filter(r=>r.status==='HOLD').length,previews:results.filter(r=>r.status==='PREVIEW_READY').length,
-  exceptions:[...analysis.exceptions,...results.filter(r=>r.ownershipReview.issues.length).flatMap(r=>r.ownershipReview.issues.map(reason=>({leaseId:r.leaseId,reason,source:'OWNERSHIP_REVIEW'})))],results,financialWrites:0,sendAllowed:false,paymentAllowed:false};
+  exceptions:[...analysis.exceptions,...results.filter(r=>r.ownershipReview.issues.length || !r.ownershipSourceMatchesApproval).flatMap(r=>[...r.ownershipReview.issues,...(!r.ownershipSourceMatchesApproval?['APPROVED_OWNERSHIP_DIFFERS_FROM_IRIS_SOURCE']:[])].map(reason=>({leaseId:r.leaseId,reason,source:'OWNERSHIP_REVIEW'})))],results,financialWrites:0,sendAllowed:false,paymentAllowed:false};
 }
