@@ -6,7 +6,7 @@ const LEASE='11111111-1111-4111-8111-111111111111',PROP='22222222-2222-4222-8222
 const event=()=>({organization_id:ORG_ID,type:'TEST_INVOICE_REQUEST',source_event_id:EVENT,lease_id:LEASE,property_id:PROP,accounting_period:'2027-01',source_version:1,occurred_at:'2026-11-25T12:00:00Z'});
 const lease={id:LEASE,property_id:PROP,status:'active',rent_amount:'2500.00'};
 const mapping={books_customer_id:'100023',books_item_id:'100053',iris_lease_id:LEASE,iris_property_id:PROP};
-const controls=Object.fromEntries(['sourceSnapshotVerified','tenantIdentityApproved','propertyUnitOwnerApproved','signedAgreementReviewed','billingPolicyApproved','accountantApproved','testCustomerConfirmed','testItemConfirmed'].map(x=>[x,true]));
+const controls=Object.fromEntries(['sourceSnapshotVerified','accountantApproved','testCustomerConfirmed','testItemConfirmed','syntheticTestOnlyApproved'].map(x=>[x,true]));
 class Store{constructor(){this.events=new Map();this.evidence=[];this.exceptions=[];this.ref=null;}
  async reserve({key,digest,sourceEventId}){const prev=this.events.get(key);if(prev)return{...prev,existing:true};const row={key,digest,sourceEventId};this.events.set(key,row);return{...row,existing:false}}
  async recordPreview(x){this.ref=x.reference;this.preview=x;}
@@ -27,12 +27,12 @@ test('reject extra data, wrong org and non-approved events',()=>{
  assert.throws(()=>parsePortalEvent({...event(),type:'PAYOUT_EXECUTE'}),/EVENT_TYPE_DENIED/);
 });
 test('without owner or accountant approvals, pilot cannot produce a draft',()=>{
- const x=prepareDraftInvoice({event:event(),lease,mapping,controls:{...controls,propertyUnitOwnerApproved:false}});
- assert.equal(x.draft,null);assert.equal(x.postingAllowed,false);assert.ok(x.holds.includes('propertyUnitOwnerApproved'));
+ const x=prepareDraftInvoice({event:event(),lease,mapping,controls:{...controls,syntheticTestOnlyApproved:false}});
+ assert.equal(x.draft,null);assert.equal(x.postingAllowed,false);assert.ok(x.holds.includes('syntheticTestOnlyApproved'));
 });
 test('even approved synthetic pilot is preview only with no invoice transmission',async()=>{
  const store=new Store(),r=await stagePortalEvent({event:event(),store,lease,mapping,controls});
- assert.equal(r.status,'PREVIEW_READY');assert.equal(r.financialWrites,0);assert.equal(r.preview.send,false);
+ assert.equal(r.status,'PREVIEW_READY');assert.equal(r.financialWrites,0);assert.equal(r.preview.send,false);assert.equal(r.preview.line_items[0].rate,1);assert.equal(r.preview.custom_fields.length,3);
  assert.equal(r.reference,makeInvoiceReference(event()));
  const again=await stagePortalEvent({event:event(),store,lease,mapping,controls});
  assert.equal(again.status,'DUPLICATE_NO_ACTION');assert.equal(store.events.size,1);
